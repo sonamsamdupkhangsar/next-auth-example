@@ -50,6 +50,29 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.AUTH0_SECRET,
       issuer: process.env.AUTH0_ISSUER,
     }),
+    {
+      id: "myauth",
+      name: "myauthname",
+      type: "oauth",
+      clientId: "nextjs-client",
+      authorization: {
+         url: "http://localhost:8087/token-mediator/oauth/authorize",
+         params: { scope: "openid email profile" }
+        },
+      token: {
+        url: "http://localhost:8087/token-mediator/oauth/token", //not working/getting called      
+      },
+      idToken: true,
+      checks: ["pkce", "state"],
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+        }
+      },
+    }
   ],
   theme: {
     colorScheme: "light",
