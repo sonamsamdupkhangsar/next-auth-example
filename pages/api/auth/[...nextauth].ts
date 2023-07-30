@@ -4,6 +4,15 @@ import FacebookProvider from "next-auth/providers/facebook"
 import GithubProvider from "next-auth/providers/github"
 import TwitterProvider from "next-auth/providers/twitter"
 import Auth0Provider from "next-auth/providers/auth0"
+import { useParams } from 'next/navigation'
+import { url } from "inspector"
+import { URLSearchParams } from "url"
+import { useSearchParams } from 'next/navigation';
+import { request } from "http"
+import { OAuthChecks, OAuthConfig } from "next-auth/providers"
+import { CallbackParamsType, BaseClient } from "openid-client"
+import { NextResponse } from "next/server"
+
 // import AppleProvider from "next-auth/providers/apple"
 // import EmailProvider from "next-auth/providers/email"
 
@@ -55,13 +64,29 @@ export const authOptions: NextAuthOptions = {
       name: "myauthname",
       type: "oauth",
       clientId: "nextjs-client",
+      clientSecret: "dummy-secret",
+      //wellKnown: "http://localhost:9001/.well-known/openid-configuration",
+      //authorization: { params: { scope: "openid email profile" } },
       authorization: {
-         url: "http://localhost:8087/token-mediator/oauth/authorize",
-         params: { scope: "openid email profile" }
-        },
+        url: "http://localhost:8087/token-mediator/oauth/authorize",
+        params: { scope: "openid email profile" }
+       },
+
+       
       token: {
-        url: "http://localhost:8087/token-mediator/oauth/token", //not working/getting called      
+        url: "http://localhost:8087/token-mediator/oauth/token", 
+
+        async request(context) {
+          // context contains useful properties to help you make the request.
+          //const tokens = await makeTokenRequest(context)
+          console.log("code: %s, redirect_uri: %s", context.params.code, context.params.redirect_uri)
+          const tokens = await makeTokenRequest(context)
+          console.log('tokens: ', tokens)
+          return { tokens }
+        }
+         
       },
+     
       idToken: true,
       checks: ["pkce", "state"],
       profile(profile) {
@@ -80,9 +105,30 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token }) {
       token.userRole = "admin"
+      console.log('admin token: ', token)
       return token
-    },
+    }
   },
 }
 
 export default NextAuth(authOptions)
+
+async function makeTokenRequest(context: { params: CallbackParamsType; checks: OAuthChecks } & { client: BaseClient; provider: OAuthConfig<{ [x: string]: unknown }> & { signinUrl: string; callbackUrl: string } }) {
+  console.log("params: ",context.params)
+  
+  const request = await fetch('http://localhost:8087/token-mediator/oauth/token?code='
+    +context.params.code+'&redirect_uri=http://localhost:3001/api/auth/callback/myauth'
+    +'&scope=openid%20email%20profile', {   
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'hello': 'world'
+            }
+          }).then( function(response) {
+            return response.json();
+          }).then(function(data) {
+            console.log(' data is now: ', data);
+            return data;
+          });
+          return request;
+}
