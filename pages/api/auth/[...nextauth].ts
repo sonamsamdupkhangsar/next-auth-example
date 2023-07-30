@@ -64,27 +64,19 @@ export const authOptions: NextAuthOptions = {
       name: "myauthname",
       type: "oauth",
       clientId: "nextjs-client",
-      clientSecret: "dummy-secret",
-      //wellKnown: "http://localhost:9001/.well-known/openid-configuration",
-      //authorization: { params: { scope: "openid email profile" } },
       authorization: {
         url: "http://localhost:8087/token-mediator/oauth/authorize",
         params: { scope: "openid email profile" }
-       },
-
-       
+       },       
       token: {
         url: "http://localhost:8087/token-mediator/oauth/token", 
 
         async request(context) {
-          // context contains useful properties to help you make the request.
-          //const tokens = await makeTokenRequest(context)
           console.log("code: %s, redirect_uri: %s", context.params.code, context.params.redirect_uri)
           const tokens = await makeTokenRequest(context)
           console.log('tokens: ', tokens)
           return { tokens }
-        }
-         
+        }         
       },
      
       idToken: true,
