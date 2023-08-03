@@ -8,10 +8,13 @@ import { useParams } from 'next/navigation'
 import { url } from "inspector"
 import { URLSearchParams } from "url"
 import { useSearchParams } from 'next/navigation';
-import { request } from "http"
+//import { request } from "http"
 import { OAuthChecks, OAuthConfig } from "next-auth/providers"
 import { CallbackParamsType, BaseClient } from "openid-client"
 import { NextResponse } from "next/server"
+import { Auth } from "@auth/core"
+import { type TokenSet } from "@auth/core/types"
+import { JWT, getToken } from "next-auth/jwt"
 
 // import AppleProvider from "next-auth/providers/apple"
 // import EmailProvider from "next-auth/providers/email"
@@ -73,13 +76,13 @@ export const authOptions: NextAuthOptions = {
 
         async request(context) {
           console.log("code: %s, redirect_uri: %s", context.params.code, context.params.redirect_uri)
-          const tokens = await makeTokenRequest(context)
-          console.log('tokens: ', tokens)
+          const tokens = await makeTokenRequest(context)          
+          console.log('tokens: {}', tokens)
           return { tokens }
         }         
       },
      
-      idToken: true,
+      idToken: true,      
       checks: ["pkce", "state"],
       profile(profile) {
         return {
@@ -95,12 +98,64 @@ export const authOptions: NextAuthOptions = {
     colorScheme: "light",
   },
   callbacks: {
-    async jwt({ token }) {
-      token.userRole = "admin"
-      console.log('admin token: ', token)
+    async jwt({ token, user, account }) {
+      token.userRole = "admin"      
+      console.log('token: ', token)    
+      
+      if (account) {
+        console.log('account: ', account)
+        
+        token = Object.assign({}, token, { access_token: account.access_token, refresh_token: account.refresh_token });        
+
+        
+        console.log("account expires at: ", account.expires_at)
+        token.refreshToken = account.refresh_token        
+        token.accessToken = account.access_token
+        if (account.refresh_token) {
+          token.accessTokenExpires =  account.expires_at!  * 1000 //seconds * 1000 = milliseconds         
+        }
+      }
+
+      // If token has not expired, return it,
+      if (Date.now() <  (Number(token.accessTokenExpires))) {
+        //Date.now() returns number of milliseconds since epoch
+        console.log("token.accessTokenExpires is not expired, Date.now(): ", Date.now(),
+        ", token.accessTokenExpires: ", token.accessTokenExpires)
+       // return token
+      }
+
+      // Otherwise, refresh the token.
+      var tokens = await refreshAccessToken(token)
+      console.log('token from refresh: ', tokens)
+      token = Object.assign({}, token, { access_token: tokens.access_token, refresh_token: tokens.refresh_token });        
       return token
-    }
+    
+      
+    },
+
+    async session({session, token}) {
+      if(session) {
+        session = Object.assign({}, session, {access_token: token.access_token})
+        console.log('session: ', session);
+        }
+      return session
+      }
   },
+}
+
+declare module "@auth/core/types" {
+  interface Session {
+    error?: "RefreshAccessTokenError"
+  }
+}
+
+declare module "@auth/core/jwt" {
+  interface JWT {
+    access_token: string
+    expires_at: number
+    refresh_token: string
+    error?: "RefreshAccessTokenError"
+  }
 }
 
 export default NextAuth(authOptions)
@@ -108,19 +163,52 @@ export default NextAuth(authOptions)
 async function makeTokenRequest(context: { params: CallbackParamsType; checks: OAuthChecks } & { client: BaseClient; provider: OAuthConfig<{ [x: string]: unknown }> & { signinUrl: string; callbackUrl: string } }) {
   console.log("params: ",context.params)
   
-  const request = await fetch('http://localhost:8087/token-mediator/oauth/token?code='
-    +context.params.code+'&redirect_uri=http://localhost:3001/api/auth/callback/myauth'
-    +'&scope=openid%20email%20profile', {   
+  const request = await fetch('http://localhost:8087/token-mediator/oauth/token?grant_type='
+    +'authorization_code&code='+context.params.code
+    +'&redirect_uri=http://localhost:3001/api/auth/callback/myauth'
+    +'&scope=openid%20email%20profile', {
+           
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'hello': 'world'
+              'hello': 'world',
+              'client_id': 'nextjs-client'
             }
           }).then( function(response) {
             return response.json();
-          }).then(function(data) {
-            console.log(' data is now: ', data);
+          }).then(function(data) {          
             return data;
           });
           return request;
+}
+
+/**
+ * Takes a token, and returns a new token with updated
+ * `accessToken` and `accessTokenExpires`. If an error occurs,
+ * returns the old token and an error property
+ */
+async function refreshAccessToken(token: any) {
+  console.log('refresh token: ', token.refresh_token);  
+  const url =
+      "http://localhost:8087/token-mediator/oauth/token?" +
+      new URLSearchParams({
+        client_id: "nextjs-client",        
+        grant_type: "refresh_token",
+        refresh_token: token.refresh_token      
+      })
+
+  const response = await fetch(url, {
+    headers: {
+      "client_id": "nextjs-client"
+    },
+    method: "POST",
+  }).then(function(response) {
+      if (!response.ok)
+        throw new Error("failed to refresh token")
+      else  
+        return response.json()
+    }).then(function(data) {
+      return data;
+    })
+    return response;
 }

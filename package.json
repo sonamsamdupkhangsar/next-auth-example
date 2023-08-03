@@ -18,9 +18,12 @@
     "Lluis Agusti <hi@llu.lu>"
   ],
   "dependencies": {
+    "@auth/core": "^0.10.0",
+    "install": "^0.13.0",
     "next": "latest",
     "next-auth": "latest",
     "nodemailer": "^6",
+    "npm": "^9.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
