@@ -15,6 +15,8 @@ import { NextResponse } from "next/server"
 import { Auth } from "@auth/core"
 import { type TokenSet } from "@auth/core/types"
 import { JWT, getToken } from "next-auth/jwt"
+import jwt_decode from 'jwt-decode'
+import { parse } from "path"
 
 // import AppleProvider from "next-auth/providers/apple"
 // import EmailProvider from "next-auth/providers/email"
@@ -100,6 +102,8 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user, account }) {
       console.log("user: ", user)
+
+      
       
       token.userRole = "admin"      
       console.log('token: ', token)    
@@ -108,8 +112,17 @@ export const authOptions: NextAuthOptions = {
         console.log('account: ', account)
         
         token = Object.assign({}, token, { access_token: account.access_token, refresh_token: account.refresh_token });        
-
+        var map = jwt_decode("" + account.access_token) as any
+        console.log("parse jwt token: ", map)
+        console.log("userRole: ", map.userRole)
+        var userRoles = <Array<string>> map.userRole
+        if (userRoles.includes('admin')) {
+          token.userRole = "admin";
+          console.log("set token.userRole to admin");
+        }
         
+        
+
         console.log("account expires at: ", account.expires_at)
        // token.refreshToken = account.refresh_token        
        // token.accessToken = account.access_token
@@ -215,3 +228,4 @@ async function refreshAccessToken(token: any) {
     })
     return response;
 }
+
