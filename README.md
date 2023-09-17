@@ -89,6 +89,11 @@ To run your site locally, use:
 npm run dev
 ```
 
+To run on a port like 3001:
+```
+npm run dev -- -p 3001
+```
+
 To run it in production mode, use:
 
 ```

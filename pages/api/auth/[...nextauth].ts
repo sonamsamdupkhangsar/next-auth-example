@@ -68,11 +68,11 @@ export const authOptions: NextAuthOptions = {
       type: "oauth",
       clientId: "nextjs-client",
       authorization: {
-        url: "http://localhost:8087/token-mediator/oauth/authorize",
+        url: "http://localhost:8080/oauth2-token-mediator/authorize",
         params: { scope: "openid email profile" }
        },       
       token: {
-        url: "http://localhost:8087/token-mediator/oauth/token", 
+        url: "http://localhost:8080/oauth/token", 
 
         async request(context) {
           console.log("code: %s, redirect_uri: %s", context.params.code, context.params.redirect_uri)
@@ -89,7 +89,7 @@ export const authOptions: NextAuthOptions = {
           id: profile.sub,
           name: profile.name,
           email: profile.email,
-          image: profile.picture,
+          image: profile.picture          
         }
       },
     }
@@ -99,6 +99,8 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user, account }) {
+      console.log("user: ", user)
+      
       token.userRole = "admin"      
       console.log('token: ', token)    
       
@@ -109,8 +111,8 @@ export const authOptions: NextAuthOptions = {
 
         
         console.log("account expires at: ", account.expires_at)
-        token.refreshToken = account.refresh_token        
-        token.accessToken = account.access_token
+       // token.refreshToken = account.refresh_token        
+       // token.accessToken = account.access_token
         if (account.refresh_token) {
           token.accessTokenExpires =  account.expires_at!  * 1000 //seconds * 1000 = milliseconds         
         }
@@ -154,6 +156,8 @@ declare module "@auth/core/jwt" {
     access_token: string
     expires_at: number
     refresh_token: string
+    //add following to test if it works
+    userRole: string
     error?: "RefreshAccessTokenError"
   }
 }
@@ -163,15 +167,14 @@ export default NextAuth(authOptions)
 async function makeTokenRequest(context: { params: CallbackParamsType; checks: OAuthChecks } & { client: BaseClient; provider: OAuthConfig<{ [x: string]: unknown }> & { signinUrl: string; callbackUrl: string } }) {
   console.log("params: ",context.params)
   
-  const request = await fetch('http://localhost:8087/token-mediator/oauth/token?grant_type='
+  const request = await fetch('http://localhost:8080/oauth2-token-mediator/token?grant_type='
     +'authorization_code&code='+context.params.code
     +'&redirect_uri=http://localhost:3001/api/auth/callback/myauth'
     +'&scope=openid%20email%20profile', {
            
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
-              'hello': 'world',
+              'Content-Type': 'application/json',            
               'client_id': 'nextjs-client'
             }
           }).then( function(response) {
@@ -190,7 +193,7 @@ async function makeTokenRequest(context: { params: CallbackParamsType; checks: O
 async function refreshAccessToken(token: any) {
   console.log('refresh token: ', token.refresh_token);  
   const url =
-      "http://localhost:8087/token-mediator/oauth/token?" +
+      "http://localhost:8080/oauth2-token-mediator/token?" +
       new URLSearchParams({
         client_id: "nextjs-client",        
         grant_type: "refresh_token",
