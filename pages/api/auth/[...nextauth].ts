@@ -18,6 +18,9 @@ import { JWT, getToken } from "next-auth/jwt"
 import jwt_decode from 'jwt-decode'
 import { parse } from "path"
 
+//const host = "http://localhost:8080"
+const host = "http://api-gateway.sonam.cloud"
+
 // import AppleProvider from "next-auth/providers/apple"
 // import EmailProvider from "next-auth/providers/email"
 
@@ -70,11 +73,11 @@ export const authOptions: NextAuthOptions = {
       type: "oauth",
       clientId: "nextjs-client",
       authorization: {
-        url: "http://localhost:8080/oauth2-token-mediator/authorize",
+        url:  host+ "/oauth2-token-mediator/authorize",
         params: { scope: "openid email profile" }
        },       
       token: {
-        url: "http://localhost:8080/oauth/token", 
+        url: host + "/oauth/token", 
 
         async request(context) {
           console.log("code: %s, redirect_uri: %s", context.params.code, context.params.redirect_uri)
@@ -180,8 +183,9 @@ export default NextAuth(authOptions)
 async function makeTokenRequest(context: { params: CallbackParamsType; checks: OAuthChecks } & { client: BaseClient; provider: OAuthConfig<{ [x: string]: unknown }> & { signinUrl: string; callbackUrl: string } }) {
   console.log("params: ",context.params)
   
-  const request = await fetch('http://localhost:8080/oauth2-token-mediator/token?grant_type='
+  const request = await fetch(host + '/oauth2-token-mediator/token?grant_type='    
     +'authorization_code&code='+context.params.code
+    +'&client_id=nextjs-client&'
     +'&redirect_uri=http://localhost:3001/api/auth/callback/myauth'
     +'&scope=openid%20email%20profile', {
            
@@ -206,7 +210,7 @@ async function makeTokenRequest(context: { params: CallbackParamsType; checks: O
 async function refreshAccessToken(token: any) {
   console.log('refresh token: ', token.refresh_token);  
   const url =
-      "http://localhost:8080/oauth2-token-mediator/token?" +
+      host + "/oauth2-token-mediator/token?" +      
       new URLSearchParams({
         client_id: "nextjs-client",        
         grant_type: "refresh_token",
