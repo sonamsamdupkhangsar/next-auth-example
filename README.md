@@ -119,7 +119,7 @@ ISC
 ## NextJs token creation procecc
 1. send a browser request to 
 ```
-http://my-server:9001/oauth2/authorize?response_type=code&scope=openid%20profile%20email&client_id=nextjs-client&redirect_uri=http://localhost:3001/api/auth/callback/myauth
+http://my-server:9001/oauth2-token-mediator/authorize?response_type=code&scope=openid%20profile%20email&client_id=nextjs-client&redirect_uri=http://localhost:3001/api/auth/callback/myauth
 ```
 The above should show a login page.  Enter the correct username/password 
 which will redirect in the browser itself with the code.

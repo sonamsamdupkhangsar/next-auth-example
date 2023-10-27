@@ -69,7 +69,7 @@ export const authOptions: NextAuthOptions = {
     }),
     {
       id: "myauth",
-      name: "myauthname",
+      name: "SonamCloud",
       type: "oauth",
       clientId: "nextjs-client",
       authorization: {
