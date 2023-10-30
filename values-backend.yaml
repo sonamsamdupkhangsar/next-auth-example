@@ -46,9 +46,9 @@ ingress:
   enabled: true
   ingressClass: nginx
   annotations:
-    nginx.ingress.kubernetes.io/auth-url: http://noexist-rest-service-mychart.backend.svc.cluster.local:80/validate
+    #nginx.ingress.kubernetes.io/auth-url: http://noexist-rest-service-mychart.backend.svc.cluster.local:80/validate
     # pass authId header returned from jwt-rest-service validation of jwt token
-    nginx.ingress.kubernetes.io/auth-response-headers: authId
+    #nginx.ingress.kubernetes.io/auth-response-headers: authId
   hosts:
     - host: nextauth.sonam.cloud
       paths:
