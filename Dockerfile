@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-#EXPOSE 3001
+EXPOSE 3000
 #CMD npm run dev-k8
 
 #For production build do:
