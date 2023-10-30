@@ -18,8 +18,8 @@ import { JWT, getToken } from "next-auth/jwt"
 import jwt_decode from 'jwt-decode'
 import { parse } from "path"
 
-//const host = "http://localhost:8080"
-const host = "http://api-gateway.sonam.cloud"
+const host = process.env.API_GATEWAY //"http://localhost:8080"
+//const host = "http://api-gateway.sonam.cloud"
 
 // import AppleProvider from "next-auth/providers/apple"
 // import EmailProvider from "next-auth/providers/email"
@@ -182,11 +182,11 @@ export default NextAuth(authOptions)
 
 async function makeTokenRequest(context: { params: CallbackParamsType; checks: OAuthChecks } & { client: BaseClient; provider: OAuthConfig<{ [x: string]: unknown }> & { signinUrl: string; callbackUrl: string } }) {
   console.log("params: ",context.params)
-  
+  console.log('host: ', host, ', nextAuthUrl: ', process.env.NEXTAUTH_URL)
   const request = await fetch(host + '/oauth2-token-mediator/token?grant_type='    
     +'authorization_code&code='+context.params.code
     +'&client_id=nextjs-client&'
-    +'&redirect_uri=http://localhost:3001/api/auth/callback/myauth'
+    +'&redirect_uri='+process.env.NEXTAUTH_URL+'/api/auth/callback/myauth'
     +'&scope=openid%20email%20profile', {
            
             method: 'POST',

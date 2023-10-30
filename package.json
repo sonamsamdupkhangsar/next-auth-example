@@ -7,15 +7,14 @@
   },
   "homepage": "https://next-auth-example.vercel.app",
   "scripts": {
-    "dev": "next",
-    "build": "next build",
+    "dev": "next -p 3001",
+    "dev-k8": "next dev -p 3001",    
+    "build-dev": "next build",
+    "build-prod": "next build",
     "start": "next start"
   },
-  "author": "Iain Collins <me@iaincollins.com>",
+  "author": "Sonam s",
   "contributors": [
-    "Balázs Orbán <info@balazsorban.com>",
-    "Nico Domino <yo@ndo.dev>",
-    "Lluis Agusti <hi@llu.lu>"
   ],
   "dependencies": {
     "@auth/core": "^0.10.0",
