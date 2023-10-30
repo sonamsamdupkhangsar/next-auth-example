@@ -27,7 +27,7 @@ jobs:
           with:
             context: .
             push: true
-            tags: ghcr.io/sonamsamdupkhangsar/myauth:latest
+            tags: ghcr.io/sonamsamdupkhangsar/next-auth-example:latest
             secrets: |
               USERNAME=${{ github.actor }}
               PERSONAL_ACCESS_TOKEN=${{ secrets.PERSONAL_ACCESS_TOKEN }}

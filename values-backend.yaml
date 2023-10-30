@@ -37,7 +37,7 @@ service:
   type: ClusterIP
 #  type: NodePort
   port: 80
-  targetPort: 8080
+  targetPort: 3000
 
 istio:
   enabled: false
