@@ -139,3 +139,13 @@ Click the `Send` button to fire the request and it should come back with followi
     "expires_in": 299
 }
 ```
+
+docker run -p 3000:3000 my-app
+
+
+`npm run dev-k8` will start with .env.development profile
+
+For production build do:
+`npm run build-prod`
+and then:
+`npm run start` will start the prod profile 
