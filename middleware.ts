@@ -12,6 +12,10 @@ export default withAuth({
       return !!token
     },
   },
+  /*pages: {
+    signIn: "/login"
+    error: "/api/error"
+  },*/
 })
 
 export const config = { matcher: ["/admin", "/me"] }

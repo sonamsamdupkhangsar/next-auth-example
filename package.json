@@ -7,8 +7,8 @@
   },
   "homepage": "https://next-auth-example.vercel.app",
   "scripts": {
-    "dev": "next -p 3001",
-    "dev-k8": "next dev -p 3001",    
+    "dev": "next -p 3000",
+    "dev-k8": "next dev -p 3000",    
     "build-dev": "next build",
     "build-prod": "next build",
     "start": "next start"

@@ -18,6 +18,8 @@ import { JWT, getToken } from "next-auth/jwt"
 import jwt_decode from 'jwt-decode'
 import { parse } from "path"
 
+ 
+
 const host = process.env.API_GATEWAY //"http://localhost:8080"
 //const host = "http://api-gateway.sonam.cloud"
 
@@ -27,6 +29,7 @@ const host = process.env.API_GATEWAY //"http://localhost:8080"
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
 export const authOptions: NextAuthOptions = {
+
   // https://next-auth.js.org/configuration/providers/oauth
   providers: [
     /* EmailProvider({
@@ -46,27 +49,6 @@ export const authOptions: NextAuthOptions = {
       },
     }),
     */
-    FacebookProvider({
-      clientId: process.env.FACEBOOK_ID,
-      clientSecret: process.env.FACEBOOK_SECRET,
-    }),
-    GithubProvider({
-      clientId: process.env.GITHUB_ID,
-      clientSecret: process.env.GITHUB_SECRET,
-    }),
-    GoogleProvider({
-      clientId: process.env.GOOGLE_ID,
-      clientSecret: process.env.GOOGLE_SECRET,
-    }),
-    TwitterProvider({
-      clientId: process.env.TWITTER_ID,
-      clientSecret: process.env.TWITTER_SECRET,
-    }),
-    Auth0Provider({
-      clientId: process.env.AUTH0_ID,
-      clientSecret: process.env.AUTH0_SECRET,
-      issuer: process.env.AUTH0_ISSUER,
-    }),
     {
       id: "myauth",
       name: "SonamCloud",
