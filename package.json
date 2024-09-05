@@ -8,28 +8,28 @@
   "homepage": "https://next-auth-example.vercel.app",
   "scripts": {
     "dev": "next -p 3000",
-    "dev-k8": "next dev -p 3000",    
+    "dev-k8": "next dev -p 3000",
     "build-dev": "next build",
     "build-prod": "next build",
     "start": "next start"
   },
   "author": "Sonam s",
-  "contributors": [
-  ],
+  "contributors": [],
   "dependencies": {
-    "@auth/core": "^0.10.0",
+    "@auth/core": "^0.10.4",
     "install": "^0.13.0",
     "jwt-decode": "^3.1.2",
     "next": "latest",
     "next-auth": "latest",
-    "nodemailer": "^6",
-    "npm": "^9.8.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "nodemailer": "^6.9.15",
+    "npm": "^9.9.3",
+    "pkce-challenge": "^4.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/node": "^17",
-    "@types/react": "^18.0.37",
-    "typescript": "^4"
+    "@types/node": "^17.0.45",
+    "@types/react": "^18.3.5",
+    "typescript": "^4.9.5"
   }
 }

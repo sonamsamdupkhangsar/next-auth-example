@@ -17,10 +17,14 @@ import { type TokenSet } from "@auth/core/types"
 import { JWT, getToken } from "next-auth/jwt"
 import jwt_decode from 'jwt-decode'
 import { parse } from "path"
+import pkceChallenge from "pkce-challenge"
+import { verifyChallenge, generateChallenge } from "pkce-challenge"
 
- 
+const challenge = await pkceChallenge(128);
 
-const host = process.env.API_GATEWAY //"http://localhost:8080"
+const host = process.env.NEXTAUTH_URL 
+const auth_server = process.env.AUTH_SERVER
+//"http://localhost:8080"
 //const host = "http://api-gateway.sonam.cloud"
 
 // import AppleProvider from "next-auth/providers/apple"
@@ -32,34 +36,17 @@ export const authOptions: NextAuthOptions = {
 
   // https://next-auth.js.org/configuration/providers/oauth
   providers: [
-    /* EmailProvider({
-         server: process.env.EMAIL_SERVER,
-         from: process.env.EMAIL_FROM,
-       }),
-    // Temporarily removing the Apple provider from the demo site as the
-    // callback URL for it needs updating due to Vercel changing domains
-
-    Providers.Apple({
-      clientId: process.env.APPLE_ID,
-      clientSecret: {
-        appleId: process.env.APPLE_ID,
-        teamId: process.env.APPLE_TEAM_ID,
-        privateKey: process.env.APPLE_PRIVATE_KEY,
-        keyId: process.env.APPLE_KEY_ID,
-      },
-    }),
-    */
     {
       id: "myauth",
       name: "SonamCloud",
       type: "oauth",
-      clientId: "nextjs-client",
+      clientId: "f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client",
       authorization: {
-        url:  host+ "/oauth2-token-mediator/authorize",
-        params: { scope: "openid email profile" }
+        url:  auth_server+ "/oauth2/authorize?code_challenge="+challenge.code_challenge,
+        params: { scope: "openid email profile", redirect_uri: "http://10.0.0.28:3000/api/auth/callback/myauth" }
        },       
       token: {
-        url: host + "/oauth/token", 
+        url: auth_server + "/oauth2/token", 
 
         async request(context) {
           console.log("code: %s, redirect_uri: %s", context.params.code, context.params.redirect_uri)
@@ -165,19 +152,22 @@ export default NextAuth(authOptions)
 async function makeTokenRequest(context: { params: CallbackParamsType; checks: OAuthChecks } & { client: BaseClient; provider: OAuthConfig<{ [x: string]: unknown }> & { signinUrl: string; callbackUrl: string } }) {
   console.log("params: ",context.params)
   console.log('host: ', host, ', nextAuthUrl: ', process.env.NEXTAUTH_URL)
-  const request = await fetch(host + '/oauth2-token-mediator/token?grant_type='    
+  const request = await fetch(auth_server + '/oauth2/token?grant_type='    
     +'authorization_code&code='+context.params.code
-    +'&client_id=nextjs-client&'
-    +'&redirect_uri='+process.env.NEXTAUTH_URL+'/api/auth/callback/myauth'
-    +'&scope=openid%20email%20profile', {
+    +'&client_id=f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client&'
+    +'&redirect_uri=http://10.0.0.28:3000/api/auth/callback/myauth'
+    +'&scope=openid%20email%20profile'
+    +'&code_verifier='+challenge.code_verifier, {
            
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',            
-              'client_id': 'nextjs-client'
+              'client_id': 'f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client'
             }
           }).then( function(response) {
-            return response.json();
+            var json = response.json();
+            console.log('response: '+ json)
+            return json;
           }).then(function(data) {          
             return data;
           });
@@ -192,16 +182,16 @@ async function makeTokenRequest(context: { params: CallbackParamsType; checks: O
 async function refreshAccessToken(token: any) {
   console.log('refresh token: ', token.refresh_token);  
   const url =
-      host + "/oauth2-token-mediator/token?" +      
+      auth_server + "/oauth2/token?" +      
       new URLSearchParams({
-        client_id: "nextjs-client",        
+        client_id: "f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client",        
         grant_type: "refresh_token",
         refresh_token: token.refresh_token      
       })
 
   const response = await fetch(url, {
     headers: {
-      "client_id": "nextjs-client"
+      "client_id": "f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client"
     },
     method: "POST",
   }).then(function(response) {
