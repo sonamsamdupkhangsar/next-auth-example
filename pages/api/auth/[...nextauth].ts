@@ -41,22 +41,29 @@ export const authOptions: NextAuthOptions = {
       name: "SonamCloud",
       type: "oauth",
       clientId: "f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client",
+      userinfo:
+       {
+        url: auth_server+"/userinfo"
+       },
       authorization: {
         url:  auth_server+ "/oauth2/authorize?code_challenge="+challenge.code_challenge,
-        params: { scope: "openid email profile", redirect_uri: "http://10.0.0.28:3000/api/auth/callback/myauth" }
+        params: { scope: "openid email profile" }
+        //, redirect_uri: "http://10.0.0.28:3000/api/auth/callback/myauth"
        },       
       token: {
         url: auth_server + "/oauth2/token", 
 
+        
         async request(context) {
           console.log("code: %s, redirect_uri: %s", context.params.code, context.params.redirect_uri)
+          console.log("making token request");
           const tokens = await makeTokenRequest(context)          
           console.log('tokens: {}', tokens)
           return { tokens }
         }         
       },
      
-      idToken: true,      
+      idToken: false,      
       checks: ["pkce", "state"],
       profile(profile) {
         return {
@@ -156,7 +163,7 @@ async function makeTokenRequest(context: { params: CallbackParamsType; checks: O
     +'authorization_code&code='+context.params.code
     +'&client_id=f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client&'
     +'&redirect_uri=http://10.0.0.28:3000/api/auth/callback/myauth'
-    +'&scope=openid%20email%20profile'
+    +'&scope=openid email profile'
     +'&code_verifier='+challenge.code_verifier, {
            
             method: 'POST',
