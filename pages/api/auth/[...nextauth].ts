@@ -20,51 +20,57 @@ import { parse } from "path"
 import pkceChallenge from "pkce-challenge"
 import { verifyChallenge, generateChallenge } from "pkce-challenge"
 
+const clientId = 'f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client'
 const challenge = await pkceChallenge(128);
+const my_challenge = challenge.code_challenge;
+const my_challenge_code_verifier = challenge.code_verifier
+
+console.log("code challenge: " + my_challenge)
+console.log("code verifier: " + my_challenge_code_verifier)
 
 const host = process.env.NEXTAUTH_URL 
 const auth_server = process.env.AUTH_SERVER
-//"http://localhost:8080"
-//const host = "http://api-gateway.sonam.cloud"
-
-// import AppleProvider from "next-auth/providers/apple"
-// import EmailProvider from "next-auth/providers/email"
-
-// For more information on each option (and a full list of options) go to
-// https://next-auth.js.org/configuration/options
 export const authOptions: NextAuthOptions = {
 
-  // https://next-auth.js.org/configuration/providers/oauth
   providers: [
     {
       id: "myauth",
       name: "SonamCloud",
       type: "oauth",
       clientId: "f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client",
+      wellKnown: "https://authorization.sonam.cloud/issuer/.well-known/openid-configuration",
+      
       userinfo:
        {
         url: auth_server+"/userinfo"
        },
       authorization: {
-        url:  auth_server+ "/oauth2/authorize?code_challenge="+challenge.code_challenge,
-        params: { scope: "openid email profile" }
-        //, redirect_uri: "http://10.0.0.28:3000/api/auth/callback/myauth"
+        url:  auth_server+ "/oauth2/authorize?myvalue=ajksdfkjsdfi",
+        
+        params: { 
+          scope: "openid email profile",
+          prompt: 'Select Account',
+          code_challenge: my_challenge,
+          code_challenge_method: "S256",
+          redirect_uri: "http://10.0.0.28:3000/api/auth/callback/myauth"
+        },
+      
        },       
       token: {
         url: auth_server + "/oauth2/token", 
-
-        
+  
         async request(context) {
           console.log("code: %s, redirect_uri: %s", context.params.code, context.params.redirect_uri)
           console.log("making token request");
           const tokens = await makeTokenRequest(context)          
           console.log('tokens: {}', tokens)
           return { tokens }
-        }         
+          // return null;
+          }         
       },
      
       idToken: false,      
-      checks: ["pkce", "state"],
+      //checks: ["pkce", "state", "nonce"],
       profile(profile) {
         return {
           id: profile.sub,
@@ -156,26 +162,74 @@ declare module "@auth/core/jwt" {
 
 export default NextAuth(authOptions)
 
-async function makeTokenRequest(context: { params: CallbackParamsType; checks: OAuthChecks } & { client: BaseClient; provider: OAuthConfig<{ [x: string]: unknown }> & { signinUrl: string; callbackUrl: string } }) {
-  console.log("params: ",context.params)
+
+async function makeAuthRequest(context: { params: { code: string } }) {
+  console.log("make auth request params: ",context.params)
   console.log('host: ', host, ', nextAuthUrl: ', process.env.NEXTAUTH_URL)
-  const request = await fetch(auth_server + '/oauth2/token?grant_type='    
-    +'authorization_code&code='+context.params.code
-    +'&client_id=f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client&'
-    +'&redirect_uri=http://10.0.0.28:3000/api/auth/callback/myauth'
-    +'&scope=openid email profile'
-    +'&code_verifier='+challenge.code_verifier, {
+  const url = auth_server + '/oauth2/authorize?'    
+  + '&client_id='+clientId
+  + '&scope=openid%20email%20profile'
+  + '&response_type=code'
+  + '&redirect_uri=http%3A%2F%2F10.0.0.28%3A3000%2Fapi%2Fauth%2Fcallback%2Fmyauth'
+  + '&prompt=Select%20Account'
+  + '&code_challenge='+my_challenge
+  + '&code_challenge_method=S256'
+  const request = await fetch(url, {
            
-            method: 'POST',
+            method: 'GET',
             headers: {
-              'Content-Type': 'application/json',            
+             // 'Content-Type': 'application/json',            
               'client_id': 'f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client'
             }
+            
           }).then( function(response) {
+            console.log('response for authorize url: ' + url);
             var json = response.json();
             console.log('response: '+ json)
             return json;
           }).then(function(data) {          
+            return data;
+          });
+          return request;
+}
+
+async function makeTokenRequest(context: { params: CallbackParamsType; checks: OAuthChecks } & { client: BaseClient; provider: OAuthConfig<{ [x: string]: unknown }> & { signinUrl: string; callbackUrl: string } }) {
+  console.log("params: ",context.params)
+  console.log('host: ', host, ', nextAuthUrl: ', process.env.NEXTAUTH_URL)
+  
+  const formData = new URLSearchParams();
+  formData.append('grant_type', 'authorization_code')
+  formData.append('code', context.params.code)
+  formData.append('client_id', clientId)
+  formData.append('redirect_uri', 'http://10.0.0.28:3000/api/auth/callback/myauth')
+  //formData.append('scope', 'openid%20email%20profile')
+  formData.append('code_verifier', my_challenge_code_verifier)
+  /*
+  const url = auth_server + '/oauth2/token?grant_type='    
+  +'authorization_code&code='+context.params.code
+  +'&client_id=f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client&'
+  +'&redirect_uri=http://10.0.0.28:3000/api/auth/callback/myauth'
+  +'&scope=openid%20email%20profile'
+  +'&code_verifier='+my_challenge_code_verifier;*/
+  const url = auth_server + '/oauth2/token';
+  const request = await fetch(url, {
+           
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',            
+              //'client_id': 'f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client'
+            },
+           body: new URLSearchParams(formData)
+            
+          }).then( function(response) {
+            console.log('url: ' + url + ", formData: "+ formData.toString());
+            var json = response.json();
+            console.log('response: '+ json)
+            
+            return json;
+          }).then(function(data) {  
+            const dataString = JSON.stringify(data);
+            console.log('dataString: '+ dataString)        
             return data;
           });
           return request;
@@ -202,8 +256,11 @@ async function refreshAccessToken(token: any) {
     },
     method: "POST",
   }).then(function(response) {
-      if (!response.ok)
+    console.log('url: '+ url)
+      if (!response.ok) {
+        console.log('failed to get refresh token: ' + response.text)
         throw new Error("failed to refresh token")
+      }
       else  
         return response.json()
     }).then(function(data) {
