@@ -69,9 +69,11 @@ export const authOptions: NextAuthOptions = {
           }         
       },
      
-      idToken: false,      
+      idToken: true,      
       //checks: ["pkce", "state", "nonce"],
       profile(profile) {
+        console.log('profile: '+ JSON.stringify(profile));
+
         return {
           id: profile.sub,
           name: profile.name,
@@ -86,10 +88,14 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user, account }) {
-      console.log("user: ", user)
+      if (account) {
+        console.log('jwt account: '+ JSON.stringify(account))
+      }
+      console.log('jwt token: '+ JSON.stringify(token))
 
-      
-      
+      console.log("jwt user: ", user)
+     
+
       token.userRole = "admin"      
       console.log('token: ', token)    
       
@@ -116,27 +122,44 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
+      console.log("return token");
+      return token;
+
       // If token has not expired, return it,
       if (Date.now() <  (Number(token.accessTokenExpires))) {
         //Date.now() returns number of milliseconds since epoch
         console.log("token.accessTokenExpires is not expired, Date.now(): ", Date.now(),
         ", token.accessTokenExpires: ", token.accessTokenExpires)
-       // return token
+        return token
       }
 
+      else {
       // Otherwise, refresh the token.
-      var tokens = await refreshAccessToken(token)
-      console.log('token from refresh: ', tokens)
-      token = Object.assign({}, token, { access_token: tokens.access_token, refresh_token: tokens.refresh_token });        
-      return token
-    
+       /* if (token.refresh_token) {
+          console.log('token has refresh token')
+          var tokens = await refreshAccessToken(token)
+          console.log('token from refresh: ', tokens)
+          token = Object.assign({}, token, { access_token: tokens.access_token, refresh_token: tokens.refresh_token });        
+          return token
+        }
+        else {
+          console.log('token does not have refresh token')
+        }*/
+      }
       
     },
 
     async session({session, token}) {
       if(session) {
+        console.log('session: '+ session);
+        const dataString = JSON.stringify(session);
+        console.log('session dataString: '+ dataString) 
+        console.log('session token: '+ JSON.stringify(token))
+        if (token) {
+          console.log('session 2 token: '+ JSON.stringify(token))
+        }
+        console.log('token: '+ token.access_token)
         session = Object.assign({}, session, {access_token: token.access_token})
-        console.log('session: ', session);
         }
       return session
       }
@@ -228,8 +251,8 @@ async function makeTokenRequest(context: { params: CallbackParamsType; checks: O
             
             return json;
           }).then(function(data) {  
-            const dataString = JSON.stringify(data);
-            console.log('dataString: '+ dataString)        
+           // const dataString = JSON.stringify(data);
+           // console.log('dataString: '+ dataString)        
             return data;
           });
           return request;
@@ -242,6 +265,7 @@ async function makeTokenRequest(context: { params: CallbackParamsType; checks: O
  */
 async function refreshAccessToken(token: any) {
   console.log('refresh token: ', token.refresh_token);  
+  
   const url =
       auth_server + "/oauth2/token?" +      
       new URLSearchParams({
