@@ -20,7 +20,7 @@ import { parse } from "path"
 import pkceChallenge from "pkce-challenge"
 import { verifyChallenge, generateChallenge } from "pkce-challenge"
 
-const clientId = 'f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client'
+const clientId = '686bc984-510d-40e9-b48e-3980ce0614ea-pkce-client'; //'f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client'
 const challenge = await pkceChallenge(128);
 const my_challenge = challenge.code_challenge;
 const my_challenge_code_verifier = challenge.code_verifier
@@ -37,8 +37,8 @@ export const authOptions: NextAuthOptions = {
       id: "myauth",
       name: "SonamCloud",
       type: "oauth",
-      clientId: "f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client",
-      wellKnown: "https://authorization.sonam.cloud/issuer/.well-known/openid-configuration",
+      clientId: clientId, //"f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client",
+      wellKnown: auth_server + "/.well-known/openid-configuration", //"https://authorization.sonam.cloud/issuer/.well-known/openid-configuration",
       
       userinfo:
        {
@@ -202,7 +202,7 @@ async function makeAuthRequest(context: { params: { code: string } }) {
             method: 'GET',
             headers: {
              // 'Content-Type': 'application/json',            
-              'client_id': 'f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client'
+              'client_id': clientId //'f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client'
             }
             
           }).then( function(response) {
@@ -230,7 +230,7 @@ async function makeTokenRequest(context: { params: CallbackParamsType; checks: O
   /*
   const url = auth_server + '/oauth2/token?grant_type='    
   +'authorization_code&code='+context.params.code
-  +'&client_id=f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client&'
+  +'&client_id='+cliendId+"&" //f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client&'
   +'&redirect_uri=http://10.0.0.28:3000/api/auth/callback/myauth'
   +'&scope=openid%20email%20profile'
   +'&code_verifier='+my_challenge_code_verifier;*/
@@ -269,14 +269,14 @@ async function refreshAccessToken(token: any) {
   const url =
       auth_server + "/oauth2/token?" +      
       new URLSearchParams({
-        client_id: "f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client",        
+        client_id: clientId, //"f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client",        
         grant_type: "refresh_token",
         refresh_token: token.refresh_token      
       })
 
   const response = await fetch(url, {
     headers: {
-      "client_id": "f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client"
+      "client_id": clientId //"f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client"
     },
     method: "POST",
   }).then(function(response) {
