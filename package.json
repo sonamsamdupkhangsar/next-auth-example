@@ -17,12 +17,14 @@
   "contributors": [],
   "dependencies": {
     "@auth/core": "^0.10.4",
+    "esrun": "^3.2.26",
     "install": "^0.13.0",
     "jwt-decode": "^3.1.2",
     "next": "latest",
     "next-auth": "latest",
     "nodemailer": "^6.9.15",
     "npm": "^9.9.3",
+    "openid-client": "^5.7.0",
     "pkce-challenge": "^4.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

@@ -4,14 +4,48 @@ import { OAuthChecks, OAuthConfig } from "next-auth/providers"
 import { CallbackParamsType, BaseClient } from "openid-client"
 import jwt_decode from 'jwt-decode'
 import pkceChallenge from "pkce-challenge"
+import { NextApiRequest, NextApiResponse } from "next"
+import React, { createContext, useContext, useState, useEffect } from 'react';
+
 
 const clientId = '686bc984-510d-40e9-b48e-3980ce0614ea-pkce-client'
-const challenge = await pkceChallenge(128);
+var code_challenge = ''
+var code_verifier = '';
+
+/*var challenge =  pkceChallenge(128);
 const my_challenge = challenge.code_challenge;
 const my_challenge_code_verifier = challenge.code_verifier
+*/
 
-console.log("code challenge: " + my_challenge)
-console.log("code verifier: " + my_challenge_code_verifier)
+type CodeChallenge = {
+  code_challenge: string,
+  code_verifier: string
+}
+
+const fetchData = async function getPkce(): Promise<CodeChallenge> {
+  const response = await pkceChallenge(128);
+  
+  return {
+    response.code_challenge, response.code_verifier
+  }
+}
+/*
+const fetchData = async () => {
+  const response = await pkceChallenge(128);
+  code_challenge = response.code_challenge
+  code_verifier = response.code_verifier
+  //setMyGlobalVariable(code_challenge);
+  //setMyGlobalVariable(code_verifier);
+
+  return {
+    code_challenge, code_verifier
+  }
+
+};*/
+
+console.log("fetchData string " + fetchData.code_challenge)
+
+
 
 const host = process.env.NEXTAUTH_URL 
 const auth_server = process.env.AUTH_SERVER
@@ -32,10 +66,11 @@ export const authOptions: NextAuthOptions = {
       authorization: {
         url:  auth_server+ "/oauth2/authorize?myvalue=ajksdfkjsdfi",
         
+
         params: { 
           scope: "openid email profile",
           prompt: 'Select Account',
-          code_challenge: my_challenge,
+          code_challenge: code_challenge,
           code_challenge_method: "S256",
           redirect_uri: "http://10.0.0.28:3000/api/auth/callback/myauth"
         },
@@ -104,29 +139,7 @@ export const authOptions: NextAuthOptions = {
       }
 
       console.log("return token");
-      return token;
-
-      // If token has not expired, return it,
-      if (Date.now() <  (Number(token.accessTokenExpires))) {
-        //Date.now() returns number of milliseconds since epoch
-        console.log("token.accessTokenExpires is not expired, Date.now(): ", Date.now(),
-        ", token.accessTokenExpires: ", token.accessTokenExpires)
-        return token
-      }
-
-      else {
-      // Otherwise, refresh the token.
-       /* if (token.refresh_token) {
-          console.log('token has refresh token')
-          var tokens = await refreshAccessToken(token)
-          console.log('token from refresh: ', tokens)
-          token = Object.assign({}, token, { access_token: tokens.access_token, refresh_token: tokens.refresh_token });        
-          return token
-        }
-        else {
-          console.log('token does not have refresh token')
-        }*/
-      }
+      return token
       
     },
 
@@ -168,16 +181,22 @@ export default NextAuth(authOptions)
 
 
 async function makeAuthRequest(context: { params: { code: string } }) {
+ 
+
   console.log("make auth request params: ",context.params)
   console.log('host: ', host, ', nextAuthUrl: ', process.env.NEXTAUTH_URL)
+  
   const url = auth_server + '/oauth2/authorize?'    
   + '&client_id='+clientId
   + '&scope=openid%20email%20profile'
   + '&response_type=code'
   + '&redirect_uri=http%3A%2F%2F10.0.0.28%3A3000%2Fapi%2Fauth%2Fcallback%2Fmyauth'
   + '&prompt=Select%20Account'
-  + '&code_challenge='+my_challenge
+  + '&code_challenge=' + code_challenge
   + '&code_challenge_method=S256'
+
+  console.log('url: ' + url)
+
   const request = await fetch(url, {
            
             method: 'GET',
@@ -205,8 +224,10 @@ async function makeTokenRequest(context: { params: CallbackParamsType; checks: O
   formData.append('code', context.params.code)
   formData.append('client_id', clientId)
   formData.append('redirect_uri', 'http://10.0.0.28:3000/api/auth/callback/myauth')
-  formData.append('code_verifier', my_challenge_code_verifier)
+  formData.append('code_verifier', code_verifier)
   
+  console.log('formData: '+ formData)
+
   const url = auth_server + '/oauth2/token';
   const request = await fetch(url, {
            
