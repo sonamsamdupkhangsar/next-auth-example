@@ -1,54 +1,15 @@
 import NextAuth, { NextAuthOptions } from "next-auth"
 import { URLSearchParams } from "url"
-import { OAuthChecks, OAuthConfig } from "next-auth/providers"
-import { CallbackParamsType, BaseClient } from "openid-client"
 import jwt_decode from 'jwt-decode'
 import pkceChallenge from "pkce-challenge"
-import { NextApiRequest, NextApiResponse } from "next"
-import React, { createContext, useContext, useState, useEffect } from 'react';
 
 
-const clientId = '686bc984-510d-40e9-b48e-3980ce0614ea-pkce-client'
-var code_challenge = ''
-var code_verifier = '';
-
-/*var challenge =  pkceChallenge(128);
-const my_challenge = challenge.code_challenge;
-const my_challenge_code_verifier = challenge.code_verifier
-*/
-
-type CodeChallenge = {
-  code_challenge: string,
-  code_verifier: string
-}
-
-const fetchData = async function getPkce(): Promise<CodeChallenge> {
-  const response = await pkceChallenge(128);
-  
-  return {
-    response.code_challenge, response.code_verifier
-  }
-}
-/*
-const fetchData = async () => {
-  const response = await pkceChallenge(128);
-  code_challenge = response.code_challenge
-  code_verifier = response.code_verifier
-  //setMyGlobalVariable(code_challenge);
-  //setMyGlobalVariable(code_verifier);
-
-  return {
-    code_challenge, code_verifier
-  }
-
-};*/
-
-console.log("fetchData string " + fetchData.code_challenge)
-
-
+const clientId = process.env.CLIENT_ID
+const pkce = await pkceChallenge(128)
 
 const host = process.env.NEXTAUTH_URL 
 const auth_server = process.env.AUTH_SERVER
+
 export const authOptions: NextAuthOptions = {
 
   providers: [
@@ -63,16 +24,16 @@ export const authOptions: NextAuthOptions = {
        {
         url: auth_server+"/userinfo"
        },
+
       authorization: {
         url:  auth_server+ "/oauth2/authorize?myvalue=ajksdfkjsdfi",
         
-
         params: { 
           scope: "openid email profile",
           prompt: 'Select Account',
-          code_challenge: code_challenge,
+          code_challenge: pkce.code_challenge,
           code_challenge_method: "S256",
-          redirect_uri: "http://10.0.0.28:3000/api/auth/callback/myauth"
+          redirect_uri: host + "/api/auth/callback/myauth"
         },
       
        },       
@@ -158,64 +119,11 @@ export const authOptions: NextAuthOptions = {
       return session
       }
   },
-}
-
-declare module "@auth/core/types" {
-  interface Session {
-    error?: "RefreshAccessTokenError"
-  }
-}
-
-declare module "@auth/core/jwt" {
-  interface JWT {
-    access_token: string
-    expires_at: number
-    refresh_token: string
-    //add following to test if it works
-    userRole: string
-    error?: "RefreshAccessTokenError"
-  }
-}
+} //end of of authOptions
 
 export default NextAuth(authOptions)
 
-
-async function makeAuthRequest(context: { params: { code: string } }) {
- 
-
-  console.log("make auth request params: ",context.params)
-  console.log('host: ', host, ', nextAuthUrl: ', process.env.NEXTAUTH_URL)
-  
-  const url = auth_server + '/oauth2/authorize?'    
-  + '&client_id='+clientId
-  + '&scope=openid%20email%20profile'
-  + '&response_type=code'
-  + '&redirect_uri=http%3A%2F%2F10.0.0.28%3A3000%2Fapi%2Fauth%2Fcallback%2Fmyauth'
-  + '&prompt=Select%20Account'
-  + '&code_challenge=' + code_challenge
-  + '&code_challenge_method=S256'
-
-  console.log('url: ' + url)
-
-  const request = await fetch(url, {
-           
-            method: 'GET',
-            headers: {
-              'client_id': clientId //'f8590a7f-a2bf-4857-a769-8d4b6549d35e-pkce-client'
-            }
-            
-          }).then( function(response) {
-            console.log('response for authorize url: ' + url);
-            var json = response.json();
-            console.log('response: '+ json)
-            return json;
-          }).then(function(data) {          
-            return data;
-          });
-          return request;
-}
-
-async function makeTokenRequest(context: { params: CallbackParamsType; checks: OAuthChecks } & { client: BaseClient; provider: OAuthConfig<{ [x: string]: unknown }> & { signinUrl: string; callbackUrl: string } }) {
+async function makeTokenRequest(context: any) {
   console.log("params: ",context.params)
   console.log('host: ', host, ', nextAuthUrl: ', process.env.NEXTAUTH_URL)
   
@@ -223,8 +131,8 @@ async function makeTokenRequest(context: { params: CallbackParamsType; checks: O
   formData.append('grant_type', 'authorization_code')
   formData.append('code', context.params.code)
   formData.append('client_id', clientId)
-  formData.append('redirect_uri', 'http://10.0.0.28:3000/api/auth/callback/myauth')
-  formData.append('code_verifier', code_verifier)
+  formData.append('redirect_uri', host+ '/api/auth/callback/myauth')
+  formData.append('code_verifier', pkce.code_verifier)
   
   console.log('formData: '+ formData)
 
@@ -248,39 +156,3 @@ async function makeTokenRequest(context: { params: CallbackParamsType; checks: O
           });
           return request;
 }
-
-/**
- * Takes a token, and returns a new token with updated
- * `accessToken` and `accessTokenExpires`. If an error occurs,
- * returns the old token and an error property
- */
-async function refreshAccessToken(token: any) {
-  console.log('refresh token: ', token.refresh_token);  
-  
-  const url =
-      auth_server + "/oauth2/token?" +      
-      new URLSearchParams({
-        client_id: clientId,
-        grant_type: "refresh_token",
-        refresh_token: token.refresh_token      
-      })
-
-  const response = await fetch(url, {
-    headers: {
-      "client_id": clientId
-    },
-    method: "POST",
-  }).then(function(response) {
-    console.log('url: '+ url)
-      if (!response.ok) {
-        console.log('failed to get refresh token: ' + response.text)
-        throw new Error("failed to refresh token")
-      }
-      else  
-        return response.json()
-    }).then(function(data) {
-      return data;
-    })
-    return response;
-}
-
