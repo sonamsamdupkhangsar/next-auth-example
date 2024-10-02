@@ -1,77 +1,59 @@
 import NextAuth, { NextAuthOptions } from "next-auth"
-import GoogleProvider from "next-auth/providers/google"
-import FacebookProvider from "next-auth/providers/facebook"
-import GithubProvider from "next-auth/providers/github"
-import TwitterProvider from "next-auth/providers/twitter"
-import Auth0Provider from "next-auth/providers/auth0"
-import { useParams } from 'next/navigation'
-import { url } from "inspector"
 import { URLSearchParams } from "url"
-import { useSearchParams } from 'next/navigation';
-//import { request } from "http"
-import { OAuthChecks, OAuthConfig } from "next-auth/providers"
-import { CallbackParamsType, BaseClient } from "openid-client"
-import { NextResponse } from "next/server"
-import { Auth } from "@auth/core"
-import { type TokenSet } from "@auth/core/types"
-import { JWT, getToken } from "next-auth/jwt"
 import jwt_decode from 'jwt-decode'
-import { parse } from "path"
+import pkceChallenge from "pkce-challenge"
 
- 
 
-const host = process.env.API_GATEWAY //"http://localhost:8080"
-//const host = "http://api-gateway.sonam.cloud"
+const clientId = process.env.CLIENT_ID as string
+const pkce = await pkceChallenge(128)
 
-// import AppleProvider from "next-auth/providers/apple"
-// import EmailProvider from "next-auth/providers/email"
+const host = process.env.NEXTAUTH_URL 
+const auth_server = process.env.AUTH_SERVER
 
-// For more information on each option (and a full list of options) go to
-// https://next-auth.js.org/configuration/options
 export const authOptions: NextAuthOptions = {
 
-  // https://next-auth.js.org/configuration/providers/oauth
   providers: [
-    /* EmailProvider({
-         server: process.env.EMAIL_SERVER,
-         from: process.env.EMAIL_FROM,
-       }),
-    // Temporarily removing the Apple provider from the demo site as the
-    // callback URL for it needs updating due to Vercel changing domains
-
-    Providers.Apple({
-      clientId: process.env.APPLE_ID,
-      clientSecret: {
-        appleId: process.env.APPLE_ID,
-        teamId: process.env.APPLE_TEAM_ID,
-        privateKey: process.env.APPLE_PRIVATE_KEY,
-        keyId: process.env.APPLE_KEY_ID,
-      },
-    }),
-    */
     {
       id: "myauth",
       name: "SonamCloud",
       type: "oauth",
-      clientId: "nextjs-client",
+      clientId: clientId, 
+      wellKnown: auth_server + "/.well-known/openid-configuration", 
+      
+      userinfo:
+       {
+        url: auth_server+"/userinfo"
+       },
+
       authorization: {
-        url:  host+ "/oauth2-token-mediator/authorize",
-        params: { scope: "openid email profile" }
+        url:  auth_server+ "/oauth2/authorize?myvalue=ajksdfkjsdfi",
+        
+        params: { 
+          scope: "openid email profile",
+          prompt: 'Select Account',
+          code_challenge: pkce.code_challenge,
+          code_challenge_method: "S256",
+          redirect_uri: host + "/api/auth/callback/myauth"
+        },
+      
        },       
       token: {
-        url: host + "/oauth/token", 
-
+        url: auth_server + "/oauth2/token", 
+  
         async request(context) {
           console.log("code: %s, redirect_uri: %s", context.params.code, context.params.redirect_uri)
+          console.log("making token request");
           const tokens = await makeTokenRequest(context)          
           console.log('tokens: {}', tokens)
           return { tokens }
-        }         
+          }         
       },
      
       idToken: true,      
-      checks: ["pkce", "state"],
+      //checks: ["pkce", "state", "nonce"],
       profile(profile) {
+        console.log('profile: '+ JSON.stringify(profile));
+
         return {
           id: profile.sub,
           name: profile.name,
@@ -86,10 +68,14 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user, account }) {
-      console.log("user: ", user)
+      if (account) {
+        console.log('jwt account: '+ JSON.stringify(account))
+      }
+      console.log('jwt token: '+ JSON.stringify(token))
 
-      
-      
+      console.log("jwt user: ", user)
+     
+
       token.userRole = "admin"      
       console.log('token: ', token)    
       
@@ -105,113 +91,68 @@ export const authOptions: NextAuthOptions = {
           token.userRole = "admin";
           console.log("set token.userRole to admin");
         }
-        
-        
 
         console.log("account expires at: ", account.expires_at)
-       // token.refreshToken = account.refresh_token        
-       // token.accessToken = account.access_token
+      
         if (account.refresh_token) {
           token.accessTokenExpires =  account.expires_at!  * 1000 //seconds * 1000 = milliseconds         
         }
       }
 
-      // If token has not expired, return it,
-      if (Date.now() <  (Number(token.accessTokenExpires))) {
-        //Date.now() returns number of milliseconds since epoch
-        console.log("token.accessTokenExpires is not expired, Date.now(): ", Date.now(),
-        ", token.accessTokenExpires: ", token.accessTokenExpires)
-       // return token
-      }
-
-      // Otherwise, refresh the token.
-      var tokens = await refreshAccessToken(token)
-      console.log('token from refresh: ', tokens)
-      token = Object.assign({}, token, { access_token: tokens.access_token, refresh_token: tokens.refresh_token });        
+      console.log("return token");
       return token
-    
       
     },
 
     async session({session, token}) {
       if(session) {
+        console.log('session: '+ session);
+        const dataString = JSON.stringify(session);
+        console.log('session dataString: '+ dataString) 
+        console.log('session token: '+ JSON.stringify(token))
+        if (token) {
+          console.log('session 2 token: '+ JSON.stringify(token))
+        }
+        console.log('token: '+ token.access_token)
         session = Object.assign({}, session, {access_token: token.access_token})
-        console.log('session: ', session);
         }
       return session
       }
   },
-}
-
-declare module "@auth/core/types" {
-  interface Session {
-    error?: "RefreshAccessTokenError"
-  }
-}
-
-declare module "@auth/core/jwt" {
-  interface JWT {
-    access_token: string
-    expires_at: number
-    refresh_token: string
-    //add following to test if it works
-    userRole: string
-    error?: "RefreshAccessTokenError"
-  }
-}
+} //end of of authOptions
 
 export default NextAuth(authOptions)
 
-async function makeTokenRequest(context: { params: CallbackParamsType; checks: OAuthChecks } & { client: BaseClient; provider: OAuthConfig<{ [x: string]: unknown }> & { signinUrl: string; callbackUrl: string } }) {
+async function makeTokenRequest(context: any) {
   console.log("params: ",context.params)
   console.log('host: ', host, ', nextAuthUrl: ', process.env.NEXTAUTH_URL)
-  const request = await fetch(host + '/oauth2-token-mediator/token?grant_type='    
-    +'authorization_code&code='+context.params.code
-    +'&client_id=nextjs-client&'
-    +'&redirect_uri='+process.env.NEXTAUTH_URL+'/api/auth/callback/myauth'
-    +'&scope=openid%20email%20profile', {
+  
+  const formData = new URLSearchParams();
+  formData.append('grant_type', 'authorization_code')
+  formData.append('code', context.params.code)
+  formData.append('client_id', clientId)
+  formData.append('redirect_uri', host+ '/api/auth/callback/myauth')
+  formData.append('code_verifier', pkce.code_verifier)
+  
+  console.log('formData: '+ formData)
+
+  const url = auth_server + '/oauth2/token';
+  const request = await fetch(url, {
            
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',            
-              'client_id': 'nextjs-client'
-            }
+              'Content-Type': 'application/x-www-form-urlencoded',            
+            },
+           body: new URLSearchParams(formData)
+            
           }).then( function(response) {
-            return response.json();
-          }).then(function(data) {          
+            console.log('url: ' + url + ", formData: "+ formData.toString());
+            var json = response.json();
+            console.log('response: '+ json)
+            
+            return json;
+          }).then(function(data) {  
             return data;
           });
           return request;
 }
-
-/**
- * Takes a token, and returns a new token with updated
- * `accessToken` and `accessTokenExpires`. If an error occurs,
- * returns the old token and an error property
- */
-async function refreshAccessToken(token: any) {
-  console.log('refresh token: ', token.refresh_token);  
-  const url =
-      host + "/oauth2-token-mediator/token?" +      
-      new URLSearchParams({
-        client_id: "nextjs-client",        
-        grant_type: "refresh_token",
-        refresh_token: token.refresh_token      
-      })
-
-  const response = await fetch(url, {
-    headers: {
-      "client_id": "nextjs-client"
-    },
-    method: "POST",
-  }).then(function(response) {
-      if (!response.ok)
-        throw new Error("failed to refresh token")
-      else  
-        return response.json()
-    }).then(function(data) {
-      return data;
-    })
-    return response;
-}
-
