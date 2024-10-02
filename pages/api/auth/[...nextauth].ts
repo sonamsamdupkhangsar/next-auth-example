@@ -4,7 +4,7 @@ import jwt_decode from 'jwt-decode'
 import pkceChallenge from "pkce-challenge"
 
 
-const clientId = process.env.CLIENT_ID
+const clientId = process.env.CLIENT_ID as string
 const pkce = await pkceChallenge(128)
 
 const host = process.env.NEXTAUTH_URL 
