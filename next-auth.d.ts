@@ -5,6 +5,8 @@ import "next-auth/jwt"
 declare module "next-auth/jwt" {
   interface JWT {
     /** The user's role. */
-    userRole?: "admin"
+    userRole?: "user"
+    adminRole?: "admin"
+    noRole?: "none"
   }
 }
