@@ -149,3 +149,6 @@ For production build do:
 `npm run build-prod`
 and then:
 `npm run start` will start the prod profile 
+
+To build locally:
+`pnpm run build-prod`

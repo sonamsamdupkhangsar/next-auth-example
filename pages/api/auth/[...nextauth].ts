@@ -86,9 +86,10 @@ export const authOptions: NextAuthOptions = {
         var map = jwt_decode("" + account.access_token) as any
         console.log("parse jwt token: ", map)
         console.log("userRole map: ", map.userRole)
+
         var userRoles = <Array<string>> [];
         if (map.userRole == undefined) {
-            userRoles = ["norole"]
+            userRoles = ["none"]
             console.log("add a norole when no roles found")
         }
         else {
@@ -100,7 +101,7 @@ export const authOptions: NextAuthOptions = {
           console.log("set token.userRole to admin");
         }
         else if (userRoles.includes('none')) {
-          token.noRole = "none"
+          token.adminRole = "none"
           console.log("no role found for this user")
         }
 
