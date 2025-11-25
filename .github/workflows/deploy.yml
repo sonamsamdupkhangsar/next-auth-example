@@ -9,33 +9,32 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: github.actor == github.repository_owner # This is the key condition
     
   steps:
-      - name: Export project name
-        run: export PROJECT_NAME=nextauth
-  
-      - name: Checkout main
-        uses: actions/checkout@v4
-           
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-  
-      - name: Save DigitalOcean kubeconfig with short-lived credentials
-        run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 ${{ secrets.springauth.K8CLUSTER_NAME }}
-  
-      - name: Deploy to k8 cluster
-        run: |        
-          export PROJECT_NAME=$(echo ${{ github.repository }} | cut -d / -f2)
-          helm repo add sonam https://sonamsamdupkhangsar.github.io/sonam-helm-chart/
-          helm upgrade --install --timeout 5m0s \
-            --set "image.repository=ghcr.io/${{github.repository}}" \
-            --set "image.tag=latest" \
-            --set "project=$PROJECT_NAME" \
-             $PROJECT_NAME \
-            sonam/mychart -f values-backend.yaml --version 0.1.26 --namespace=backend
-  
-  
-  
+        - name: Export project name
+          run: export PROJECT_NAME=nextauth
+    
+        - name: Checkout main
+          uses: actions/checkout@v4
+            
+        - name: Install doctl
+          uses: digitalocean/action-doctl@v2
+          with:
+            token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+    
+        - name: Save DigitalOcean kubeconfig with short-lived credentials
+          run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 ${{ secrets.springauth.K8CLUSTER_NAME }}
+    
+        - name: Deploy to k8 cluster
+          run: |        
+            export PROJECT_NAME=$(echo ${{ github.repository }} | cut -d / -f2)
+            helm repo add sonam https://sonamsamdupkhangsar.github.io/sonam-helm-chart/
+            helm upgrade --install --timeout 5m0s \
+              --set "image.repository=ghcr.io/${{github.repository}}" \
+              --set "image.tag=latest" \
+              --set "project=$PROJECT_NAME" \
+              $PROJECT_NAME \
+              sonam/mychart -f values-backend.yaml --version 0.1.26 --namespace=backend
+    
+    
+    
