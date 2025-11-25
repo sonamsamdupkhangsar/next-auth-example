@@ -1,5 +1,10 @@
 name: Deploy if Owner
 on:
+  push:
+    branches:
+      - main # Or your desired deployment branch
+  workflow_dispatch: # Allows manual triggering of the workflow
+
   
 jobs:
     deploy:
