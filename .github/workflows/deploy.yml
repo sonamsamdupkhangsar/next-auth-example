@@ -8,8 +8,8 @@ on:
   
 jobs:
     deploy:
-     runs-on: ubuntu-latest
-     if: github.actor == github.repository_owner # This is the key condition
+      runs-on: ubuntu-latest
+      if: github.actor == github.repository_owner # This is the key condition
     
     steps:
       - name: Export project name
