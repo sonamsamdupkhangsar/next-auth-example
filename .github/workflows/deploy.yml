@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.actor == github.repository_owner # This is the key condition
     
-    steps:
+  steps:
       - name: Export project name
         run: export PROJECT_NAME=$(echo ${{ github.repository }} | cut -d / -f2); echo $PROJECT_NAME
   
