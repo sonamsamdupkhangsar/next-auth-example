@@ -101,22 +101,33 @@ npm run build-prod
 npm run start
 ```
 
+## GitHub Actions
+
+The GitHub workflow only builds the Docker image. It does not deploy to
+Kubernetes.
+
+- pull requests build the image without pushing it
+- pushes to any branch build and push `ghcr.io/<owner>/<repo>:latest`
+
+Deployment is done separately with Helm from this repo or from your local
+deployment workflow.
+
 ## Kubernetes Gateway API Variants
 
 The same Docker image can be deployed twice with different Helm values:
 
 ```sh
-helm upgrade --install nextauth-free sonam/mychart \
+helm upgrade --install nextauth-free \
+  /Users/sonamsamdupkhangsar/Documents/github/sonam-helm-chart \
   -f values-free.yaml \
-  --version 0.1.27 \
-  --namespace=backend
+  --namespace=main
 ```
 
 ```sh
-helm upgrade --install nextauth-business1 sonam/mychart \
+helm upgrade --install nextauth-business1 \
+  /Users/sonamsamdupkhangsar/Documents/github/sonam-helm-chart \
   -f values-business1.yaml \
-  --version 0.1.27 \
-  --namespace=backend
+  --namespace=main
 ```
 
 The app is routed under `/nextauth` on each tenant host:
@@ -133,7 +144,7 @@ kubectl create secret generic nextauth-free-secrets \
   --from-literal=NEXTAUTH_SECRET='replace-me' \
   --from-literal=OPENISSUER_CLIENT_ID='replace-me' \
   --from-literal=OPENISSUER_CLIENT_SECRET='' \
-  --namespace=backend
+  --namespace=main
 ```
 
 ```sh
@@ -141,5 +152,13 @@ kubectl create secret generic nextauth-business1-secrets \
   --from-literal=NEXTAUTH_SECRET='replace-me' \
   --from-literal=OPENISSUER_CLIENT_ID='replace-me' \
   --from-literal=OPENISSUER_CLIENT_SECRET='' \
-  --namespace=backend
+  --namespace=main
+```
+
+After GitHub Actions pushes a new `latest` image, restart the deployment to pull
+the new image:
+
+```sh
+kubectl rollout restart deployment/nextauth-free --namespace=main
+kubectl rollout status deployment/nextauth-free --namespace=main
 ```
