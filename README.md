@@ -40,6 +40,12 @@ For local root-path development, leave `NEXT_PUBLIC_BASE_PATH` unset. The
 Docker image builds with `/nextauth` so it can run behind Gateway API path
 routing on the tenant hosts.
 
+For a base-path deployment, `NEXTAUTH_URL` must include the auth route:
+
+```sh
+NEXTAUTH_URL=https://free.openissuer.com/nextauth/api/auth
+```
+
 Generate a better `NEXTAUTH_SECRET` with:
 
 ```sh

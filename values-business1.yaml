@@ -47,7 +47,7 @@ postgres:
 
 envs:
   - name: NEXTAUTH_URL
-    value: https://business1.openissuer.com/nextauth
+    value: https://business1.openissuer.com/nextauth/api/auth
   - name: NEXT_PUBLIC_BASE_PATH
     value: /nextauth
   - name: OPENISSUER_ISSUER
