@@ -1,154 +1,145 @@
-> The example repository is maintained from a [monorepo](https://github.com/nextauthjs/next-auth/tree/main/apps/example-nextjs). Pull Requests should be opened against [`nextauthjs/next-auth`](https://github.com/nextauthjs/next-auth).
+# OpenIssuer NextAuth Test Client
 
-<p align="center">
-   <br/>
-   <a href="https://next-auth.js.org" target="_blank"><img width="150px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a>
-   <h3 align="center">NextAuth.js Example App</h3>
-   <p align="center">
-   Open Source. Full Stack. Own Your Data.
-   </p>
-   <p align="center" style="align: center;">
-      <a href="https://npm.im/next-auth">
-        <img alt="npm" src="https://img.shields.io/npm/v/next-auth?color=green&label=next-auth">
-      </a>
-      <a href="https://bundlephobia.com/result?p=next-auth-example">
-        <img src="https://img.shields.io/bundlephobia/minzip/next-auth?label=next-auth" alt="Bundle Size"/>
-      </a>
-      <a href="https://www.npmtrends.com/next-auth">
-        <img src="https://img.shields.io/npm/dm/next-auth?label=next-auth%20downloads" alt="Downloads" />
-      </a>
-      <a href="https://npm.im/next-auth">
-        <img src="https://img.shields.io/badge/npm-TypeScript-blue" alt="TypeScript" />
-      </a>
-   </p>
-</p>
+This project is a small Next.js app used to verify that an OpenIssuer OAuth
+client works for a selected issuer.
 
-## Overview
+It is useful for testing:
 
-NextAuth.js is a complete open source authentication solution.
+- authorization code login through OpenIssuer
+- PKCE, state, and nonce handling through NextAuth
+- issuer-specific clients for `platform`, `free`, `business1`, and `business2`
+- returned OIDC claims on the `/me` page
 
-This is an example application that shows how `next-auth` is applied to a basic Next.js app.
+## Local Setup
 
-The deployed version can be found at [`next-auth-example.vercel.app`](https://next-auth-example.vercel.app)
+Install dependencies:
 
-### About NextAuth.js
-
-NextAuth.js is an easy to implement, full-stack (client/server) open source authentication library originally designed for [Next.js](https://nextjs.org) and [Serverless](https://vercel.com). Our goal is to [support even more frameworks](https://github.com/nextauthjs/next-auth/issues/2294) in the future.
-
-Go to [next-auth.js.org](https://next-auth.js.org) for more information and documentation.
-
-> *NextAuth.js is not officially associated with Vercel or Next.js.*
-
-## Getting Started
-
-### 1. Clone the repository and install dependencies
-
-```
-git clone https://github.com/nextauthjs/next-auth-example.git
-cd next-auth-example
+```sh
 npm install
 ```
 
-### 2. Configure your local environment
+Create local environment settings:
 
-Copy the .env.local.example file in this directory to .env.local (which will be ignored by Git):
-
-```
+```sh
 cp .env.local.example .env.local
 ```
 
-Add details for one or more providers (e.g. Google, Twitter, GitHub, Email, etc).
+Configure `.env.local`:
 
-#### Database
-
-A database is needed to persist user accounts and to support email sign in. However, you can still use NextAuth.js for authentication without a database by using OAuth for authentication. If you do not specify a database, [JSON Web Tokens](https://jwt.io/introduction) will be enabled by default.
-
-You **can** skip configuring a database and come back to it later if you want.
-
-For more information about setting up a database, please check out the following links:
-
-* Docs: [next-auth.js.org/adapters/overview](https://next-auth.js.org/adapters/overview)
-
-### 3. Configure Authentication Providers
-
-1. Review and update options in `pages/api/auth/[...nextauth].js` as needed.
-
-2. When setting up OAuth, in the developer admin page for each of your OAuth services, you should configure the callback URL to use a callback path of `{server}/api/auth/callback/{provider}`.
-
-  e.g. For Google OAuth you would use: `http://localhost:3000/api/auth/callback/google`
-
-  A list of configured providers and their callback URLs is available from the endpoint `/api/auth/providers`. You can find more information at https://next-auth.js.org/configuration/providers/oauth
-
-3. You can also choose to specify an SMTP server for passwordless sign in via email.
-
-### 4. Start the application
-
-To run your site locally, use:
-
+```sh
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=change-me
+OPENISSUER_ISSUER=https://free.openissuer.com/issuer
+OPENISSUER_CLIENT_ID=your-client-id
+OPENISSUER_CLIENT_SECRET=
+OPENISSUER_PROVIDER_ID=myauth
+OPENISSUER_SCOPES=openid profile email
 ```
+
+For local root-path development, leave `NEXT_PUBLIC_BASE_PATH` unset. The
+Docker image builds with `/nextauth` so it can run behind Gateway API path
+routing on the tenant hosts.
+
+Generate a better `NEXTAUTH_SECRET` with:
+
+```sh
+openssl rand -hex 32
+```
+
+## OAuth Client Setup
+
+Register this redirect URI in the OpenIssuer client for the issuer being tested:
+
+```text
+http://localhost:3000/api/auth/callback/myauth
+```
+
+If `OPENISSUER_PROVIDER_ID` is changed, the callback path must match that value:
+
+```text
+http://localhost:3000/api/auth/callback/{provider-id}
+```
+
+The issuer and client must belong together. For example, a `free` client should
+be tested with the `free` issuer URL.
+
+For the Kubernetes Gateway API variants in this repo, register these redirect
+URIs:
+
+```text
+https://free.openissuer.com/nextauth/api/auth/callback/myauth
+https://business1.openissuer.com/nextauth/api/auth/callback/myauth
+```
+
+## Run
+
+Start the app:
+
+```sh
 npm run dev
 ```
 
-To run on a port like 3001:
-```
-npm run dev -- -p 3001
+Open:
+
+```text
+http://localhost:3000
 ```
 
-To run it in production mode, use:
+Sign in, then open `/me` to verify the returned issuer, tenant, subject, and
+claims.
 
+## Build
+
+```sh
+npm run build-dev
 ```
-npm run build
+
+Production build and start:
+
+```sh
+npm run build-prod
 npm run start
 ```
 
-### 5. Preparing for Production
+## Kubernetes Gateway API Variants
 
-Follow the [Deployment documentation](https://next-auth.js.org/deployment)
+The same Docker image can be deployed twice with different Helm values:
 
-## Acknowledgements
-
-<a href="https://vercel.com?utm_source=nextauthjs&utm_campaign=oss">
-<img width="170px" src="https://raw.githubusercontent.com/nextauthjs/next-auth/canary/www/static/img/powered-by-vercel.svg" alt="Powered By Vercel" />
-</a>
-<p align="left">Thanks to Vercel sponsoring this project by allowing it to be deployed for free for the entire NextAuth.js Team</p>
-
-## License
-
-ISC
-
-## NextJs token creation procecc
-1. send a browser request to 
-```
-http://my-server:9001/oauth2-token-mediator/authorize?response_type=code&scope=openid%20profile%20email&client_id=nextjs-client&redirect_uri=http://localhost:3001/api/auth/callback/myauth
-```
-The above should show a login page.  Enter the correct username/password 
-which will redirect in the browser itself with the code.
-
-Copy the code and paste in postman:
-```
-http://localhost:9001/oauth2/token?grant_type=authorization_code&redirect_uri=http://localhost:3001/api/auth/callback/myauth&code=1MYAIujmQssFNqIx5_xY_IAS0sYMDXMzFda2PWvDa0cPwmc2LOKJS6xSNzNSp0Cfq17T5bnkMMApvP6tD4VESC6Eq5imX4AilH7lCITK1RU4jPkEawrjNyLy5yfOlqDy&scope=openid%20email%20profile
+```sh
+helm upgrade --install nextauth-free sonam/mychart \
+  -f values-free.yaml \
+  --version 0.1.27 \
+  --namespace=backend
 ```
 
-Click the `Send` button to fire the request and it should come back with following response:
-```
-{
-    "access_token": "eyJraWQiOiI1Yjk0ZGVjYS0wYjg2LTQ5ZjctYjY1Ny1kMThmNjU1NTEyNjMiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJzb25hbSIsImF1ZCI6Im5leHRqcy1jbGllbnQiLCJuYmYiOjE2OTA2NTQ0NDcsInNjb3BlIjpbIm9wZW5pZCIsInByb2ZpbGUiLCJlbWFpbCJdLCJpc3MiOiJodHRwOi8vbXktc2VydmVyOjkwMDEiLCJleHAiOjE2OTA2NTQ3NDcsImlhdCI6MTY5MDY1NDQ0N30.KaltK2mddWzO1ksLVe-X2CyTqV2E_1N5t_gCfowD3gsoCRZF39rNWflwFb8DYwhCCuiyPplaP-CQ-uduJPi_ysgiTTKh3DkcPod0vE7quU83i4HYOYcJZu5rqOS8_3Vbr1EwXUODbD12v9g-em8ZWvwthGqJwZoD1hYBzOEsL1792TGBrvKuBvE2ZJ9VcwOwLrHV9qaZx45jKFnx_SyiIJc22QIgvY3lOwfiSmxyHMY74bTKHgNa8RHT-DaQR-tJNxBMZuHW80V1YZ1-b0KFwVQV2FiH2jxv3Rg0K6dUd0ksbD86HxsFUJWK9RSIRQtcFvU0vKMHwCrY8roACXbHWw",
-    "scope": "openid profile email",
-    "id_token": "eyJraWQiOiI1Yjk0ZGVjYS0wYjg2LTQ5ZjctYjY1Ny1kMThmNjU1NTEyNjMiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJzb25hbSIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwiaXNzIjoiaHR0cDovL215LXNlcnZlcjo5MDAxIiwicGhvbmVfbnVtYmVyX3ZlcmlmaWVkIjpmYWxzZSwicHJlZmVycmVkX3VzZXJuYW1lIjoic29uYW0iLCJnaXZlbl9uYW1lIjoic29uYW0iLCJzaWQiOiJIYUkxS3dlVm1aRVhXZWJVQ0pzRXRZY1Q3bVhXN0ZkcldHRVc0SDVNR2pVIiwiYXVkIjoibmV4dGpzLWNsaWVudCIsImF6cCI6Im5leHRqcy1jbGllbnQiLCJhdXRoX3RpbWUiOjE2OTA2NTQ0MTYsIm5hbWUiOiJzb25hbSIsImV4cCI6MTY5MDY1NjI0NywiaWF0IjoxNjkwNjU0NDQ3LCJmYW1pbHlfbmFtZSI6InNhbWR1cGtoYW5nc2FyIiwiZW1haWwiOiJtZUBzb25hbS5lbWFpbCJ9.i1AkFdND6RfoM9DIN0eojH0WnqsW_bxuUP34fI1y34KqKM2nXTajoL-qF4PoNtZSH3E4g4oCLoUVPYxXHWXKbYoMwdE9fo-00hwDwZ8WtTibCQC6Sha9m0VHpOIZqHsqEXHJtcu3jxHRAXmAHrhdMP-SKy8BYZVkoRBt92bnGgmmCBNJKTRGE1XWtOqXnH9_24DcTyy_Wlpuq02gLp8TaebCRc8JMnw2QeWUc1Loe1xDgzphcR4KJLRqBwXu-m_NCIbcKb3k9kHWDvPJET62ZByOXBE96rJJIVevHzEAOZie_5LWgx3TOD6x49xSHmgGZvYt9kSQJm6YQL9eaqAyqQ",
-    "token_type": "Bearer",
-    "expires_in": 299
-}
+```sh
+helm upgrade --install nextauth-business1 sonam/mychart \
+  -f values-business1.yaml \
+  --version 0.1.27 \
+  --namespace=backend
 ```
 
-docker run -p 3000:3000 my-app
+The app is routed under `/nextauth` on each tenant host:
 
+```text
+https://free.openissuer.com/nextauth
+https://business1.openissuer.com/nextauth
+```
 
-`npm run dev-k8` will start with .env.development profile
+Create the referenced Kubernetes secrets before deploying:
 
-For production build do:
-`npm run build-prod`
-and then:
-`npm run start` will start the prod profile 
+```sh
+kubectl create secret generic nextauth-free-secrets \
+  --from-literal=NEXTAUTH_SECRET='replace-me' \
+  --from-literal=OPENISSUER_CLIENT_ID='replace-me' \
+  --from-literal=OPENISSUER_CLIENT_SECRET='' \
+  --namespace=backend
+```
 
-To build locally:
-`pnpm run build-prod`
+```sh
+kubectl create secret generic nextauth-business1-secrets \
+  --from-literal=NEXTAUTH_SECRET='replace-me' \
+  --from-literal=OPENISSUER_CLIENT_ID='replace-me' \
+  --from-literal=OPENISSUER_CLIENT_SECRET='' \
+  --namespace=backend
+```
