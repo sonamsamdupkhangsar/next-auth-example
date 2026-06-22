@@ -2,13 +2,10 @@ import NextAuth, { NextAuthOptions } from "next-auth"
 import jwtDecode from "jwt-decode"
 
 const providerId = process.env.OPENISSUER_PROVIDER_ID || "myauth"
-const issuer = normalizeUrl(process.env.OPENISSUER_ISSUER || process.env.AUTH_SERVER)
-const clientId = process.env.OPENISSUER_CLIENT_ID || process.env.CLIENT_ID
+const issuer = normalizeUrl(process.env.OPENISSUER_ISSUER || process.env.AUTH_SERVER) || "http://localhost:9001/issuer"
+const clientId = process.env.OPENISSUER_CLIENT_ID || process.env.CLIENT_ID || "missing-openissuer-client-id"
 const clientSecret = process.env.OPENISSUER_CLIENT_SECRET
 const scopes = process.env.OPENISSUER_SCOPES || "openid profile email"
-
-assertRequired("OPENISSUER_ISSUER or AUTH_SERVER", issuer)
-assertRequired("OPENISSUER_CLIENT_ID or CLIENT_ID", clientId)
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -75,12 +72,6 @@ export default NextAuth(authOptions)
 
 function normalizeUrl(value?: string) {
   return value?.replace(/\/+$/, "")
-}
-
-function assertRequired(name: string, value?: string) {
-  if (!value) {
-    throw new Error(`${name} must be configured`)
-  }
 }
 
 function decodeClaims(token?: string) {
