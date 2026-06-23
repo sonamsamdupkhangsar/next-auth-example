@@ -55,7 +55,7 @@ envs:
   - name: OPENISSUER_PROVIDER_ID
     value: myauth
   - name: OPENISSUER_SCOPES
-    value: openid profile email
+    value: openid profile
 
 secretFiles:
   - file: nextauth-free-secrets

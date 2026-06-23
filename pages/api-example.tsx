@@ -1,5 +1,7 @@
 import Layout from "../components/layout"
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ""
+
 export default function ApiExamplePage() {
   return (
     <Layout>
@@ -9,11 +11,11 @@ export default function ApiExamplePage() {
         <em>You must be signed in to see responses.</em>
       </p>
       <h2>Session</h2>
-      <p>/api/examples/session</p>
-      <iframe src="/api/examples/session" />
+      <p>{basePath}/api/examples/session</p>
+      <iframe src={`${basePath}/api/examples/session`} />
       <h2>JSON Web Token</h2>
-      <p>/api/examples/jwt</p>
-      <iframe src="/api/examples/jwt" />
+      <p>{basePath}/api/examples/jwt</p>
+      <iframe src={`${basePath}/api/examples/jwt`} />
     </Layout>
   )
 }

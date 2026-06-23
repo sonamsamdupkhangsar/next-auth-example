@@ -5,7 +5,7 @@ const providerId = process.env.OPENISSUER_PROVIDER_ID || "myauth"
 const issuer = normalizeUrl(process.env.OPENISSUER_ISSUER || process.env.AUTH_SERVER) || "http://localhost:9001/issuer"
 const clientId = process.env.OPENISSUER_CLIENT_ID || process.env.CLIENT_ID || "missing-openissuer-client-id"
 const clientSecret = process.env.OPENISSUER_CLIENT_SECRET
-const scopes = process.env.OPENISSUER_SCOPES || "openid profile email"
+const scopes = process.env.OPENISSUER_SCOPES || "openid profile"
 
 export const authOptions: NextAuthOptions = {
   providers: [

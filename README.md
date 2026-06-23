@@ -33,7 +33,7 @@ OPENISSUER_ISSUER=https://free.openissuer.com/issuer
 OPENISSUER_CLIENT_ID=your-client-id
 OPENISSUER_CLIENT_SECRET=
 OPENISSUER_PROVIDER_ID=myauth
-OPENISSUER_SCOPES=openid profile email
+OPENISSUER_SCOPES=openid profile
 ```
 
 For local root-path development, leave `NEXT_PUBLIC_BASE_PATH` unset. The
