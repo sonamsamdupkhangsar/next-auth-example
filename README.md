@@ -118,6 +118,20 @@ Kubernetes.
 Deployment is done separately with Helm from this repo or from your local
 deployment workflow.
 
+## Deploy To Kubernetes
+
+Deployments are done manually with Helm. GitHub Actions builds and pushes the
+Docker image, but it does not apply anything to the cluster.
+
+Set the kubeconfig for the OpenIssuer cluster:
+
+```sh
+export KUBECONFIG=/Users/sonamsamdupkhangsar/Documents/github/do-k8-terraform-1/utils/kubeconfig_tutorial-1.yaml
+```
+
+Confirm the image has been built by GitHub Actions before restarting a
+deployment that uses the `latest` tag.
+
 ## Kubernetes Gateway API Variants
 
 The same Docker image can be deployed twice with different Helm values:
@@ -136,6 +150,17 @@ helm upgrade --install nextauth-business1 \
   --namespace=main
 ```
 
+Use Helm dry-run when you want to see what Helm would render/apply without
+changing the cluster:
+
+```sh
+helm upgrade --install nextauth-free \
+  /Users/sonamsamdupkhangsar/Documents/github/sonam-helm-chart \
+  -f values-free.yaml \
+  --namespace=main \
+  --dry-run --debug
+```
+
 The app is routed under `/nextauth` on each tenant host:
 
 ```text
@@ -143,28 +168,62 @@ https://free.openissuer.com/nextauth
 https://business1.openissuer.com/nextauth
 ```
 
-Create the referenced Kubernetes secrets before deploying:
+Register these callback URLs in the matching OpenIssuer OAuth clients:
+
+```text
+https://free.openissuer.com/nextauth/api/auth/callback/myauth
+https://business1.openissuer.com/nextauth/api/auth/callback/myauth
+```
+
+The OAuth clients should allow:
+
+```text
+Scopes: openid, profile
+Grant type: authorization_code
+Client authentication: client_secret_basic
+```
+
+Create or update the referenced Kubernetes secrets before deploying. Use real
+values for the client ID and secret:
 
 ```sh
 kubectl create secret generic nextauth-free-secrets \
-  --from-literal=NEXTAUTH_SECRET='replace-me' \
+  --from-literal=NEXTAUTH_SECRET="$(openssl rand -hex 32)" \
   --from-literal=OPENISSUER_CLIENT_ID='replace-me' \
-  --from-literal=OPENISSUER_CLIENT_SECRET='' \
-  --namespace=main
+  --from-literal=OPENISSUER_CLIENT_SECRET='replace-me' \
+  --namespace=main \
+  --dry-run=client -o yaml | kubectl apply -f -
 ```
 
 ```sh
 kubectl create secret generic nextauth-business1-secrets \
-  --from-literal=NEXTAUTH_SECRET='replace-me' \
+  --from-literal=NEXTAUTH_SECRET="$(openssl rand -hex 32)" \
   --from-literal=OPENISSUER_CLIENT_ID='replace-me' \
-  --from-literal=OPENISSUER_CLIENT_SECRET='' \
-  --namespace=main
+  --from-literal=OPENISSUER_CLIENT_SECRET='replace-me' \
+  --namespace=main \
+  --dry-run=client -o yaml | kubectl apply -f -
 ```
 
 After GitHub Actions pushes a new `latest` image, restart the deployment to pull
-the new image:
+the new image.
+
+For free:
 
 ```sh
 kubectl rollout restart deployment/nextauth-free --namespace=main
 kubectl rollout status deployment/nextauth-free --namespace=main
+```
+
+For business1:
+
+```sh
+kubectl rollout restart deployment/nextauth-business1 --namespace=main
+kubectl rollout status deployment/nextauth-business1 --namespace=main
+```
+
+Check logs if login or callback handling fails:
+
+```sh
+kubectl logs --namespace=main deploy/nextauth-free --tail=200
+kubectl logs --namespace=main deploy/nextauth-business1 --tail=200
 ```
