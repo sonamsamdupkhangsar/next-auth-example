@@ -132,9 +132,45 @@ export KUBECONFIG=/Users/sonamsamdupkhangsar/Documents/github/do-k8-terraform-1/
 Confirm the image has been built by GitHub Actions before restarting a
 deployment that uses the `latest` tag.
 
-## Kubernetes Gateway API Variants
+## 10-Minute Free Tenant Quickstart
 
-The same Docker image can be deployed twice with different Helm values:
+This flow deploys the example at:
+
+```text
+https://free.openissuer.com/nextauth
+```
+
+### 1. Register The OAuth Client
+
+In the Free tenant admin portal, create an OAuth client with:
+
+```text
+Redirect URI: https://free.openissuer.com/nextauth/api/auth/callback/myauth
+Scopes: openid, profile
+Grant type: authorization_code
+Client authentication: client_secret_basic
+```
+
+Submit the client form, then retain the generated client ID and secret. The
+client must be registered in the same tenant as the configured issuer.
+
+### 2. Create The Kubernetes Secret
+
+The secret name must be `nextauth-free-secrets` because that is the name
+referenced by `values-free.yaml`:
+
+```sh
+kubectl create secret generic nextauth-free-secrets \
+  --from-literal=NEXTAUTH_SECRET="$(openssl rand -hex 32)" \
+  --from-literal=OPENISSUER_CLIENT_ID='replace-me' \
+  --from-literal=OPENISSUER_CLIENT_SECRET='replace-me' \
+  --namespace=main \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+### 3. Deploy The Example
+
+From this repository:
 
 ```sh
 helm upgrade --install nextauth-free \
@@ -143,12 +179,49 @@ helm upgrade --install nextauth-free \
   --namespace=main
 ```
 
+The command upgrades the existing release when it is already installed. It is
+not necessary to delete the release first.
+
+### 4. Verify Sign-In
+
+Open `https://free.openissuer.com/nextauth`, select **Sign in**, and complete
+authentication. Open the session view after sign-in and verify the issuer,
+tenant, subject, and claims.
+
+Confirm the deployment is healthy with:
+
+```sh
+kubectl rollout status deployment/nextauth-free --namespace=main
+kubectl logs deployment/nextauth-free --namespace=main --tail=100
+```
+
+## Business1 Tenant
+
+Repeat the quickstart with these substitutions:
+
+```text
+Issuer:       https://business1.openissuer.com/issuer
+Application:  https://business1.openissuer.com/nextauth
+Callback:     https://business1.openissuer.com/nextauth/api/auth/callback/myauth
+Secret name:  nextauth-business1-secrets
+Values file:  values-business1.yaml
+Release name: nextauth-business1
+```
+
+Deploy it with:
+
 ```sh
 helm upgrade --install nextauth-business1 \
   /Users/sonamsamdupkhangsar/Documents/github/sonam-helm-chart \
   -f values-business1.yaml \
   --namespace=main
 ```
+
+## Kubernetes Gateway API Details
+
+The same Docker image is deployed with tenant-specific Helm values. Each values
+file supplies the tenant host, issuer, release name, callback base path, and
+Kubernetes secret reference.
 
 Use Helm dry-run when you want to see what Helm would render/apply without
 changing the cluster:
@@ -161,39 +234,16 @@ helm upgrade --install nextauth-free \
   --dry-run --debug
 ```
 
-The app is routed under `/nextauth` on each tenant host:
+Create or update the referenced Kubernetes secrets before deploying. The secret
+names are part of the Helm values and must match exactly:
 
 ```text
-https://free.openissuer.com/nextauth
-https://business1.openissuer.com/nextauth
+values-free.yaml      -> nextauth-free-secrets
+values-business1.yaml -> nextauth-business1-secrets
 ```
 
-Register these callback URLs in the matching OpenIssuer OAuth clients:
-
-```text
-https://free.openissuer.com/nextauth/api/auth/callback/myauth
-https://business1.openissuer.com/nextauth/api/auth/callback/myauth
-```
-
-The OAuth clients should allow:
-
-```text
-Scopes: openid, profile
-Grant type: authorization_code
-Client authentication: client_secret_basic
-```
-
-Create or update the referenced Kubernetes secrets before deploying. Use real
-values for the client ID and secret:
-
-```sh
-kubectl create secret generic nextauth-free-secrets \
-  --from-literal=NEXTAUTH_SECRET="$(openssl rand -hex 32)" \
-  --from-literal=OPENISSUER_CLIENT_ID='replace-me' \
-  --from-literal=OPENISSUER_CLIENT_SECRET='replace-me' \
-  --namespace=main \
-  --dry-run=client -o yaml | kubectl apply -f -
-```
+Create the Business1 secret with real client values before deploying that
+variant:
 
 ```sh
 kubectl create secret generic nextauth-business1-secrets \
@@ -202,6 +252,13 @@ kubectl create secret generic nextauth-business1-secrets \
   --from-literal=OPENISSUER_CLIENT_SECRET='replace-me' \
   --namespace=main \
   --dry-run=client -o yaml | kubectl apply -f -
+```
+
+If a secret was created with a different name, the deployment will keep using the
+old values from the expected secret. Check the secret names with:
+
+```sh
+kubectl get secret --namespace=main | grep nextauth
 ```
 
 After GitHub Actions pushes a new `latest` image, restart the deployment to pull
@@ -214,11 +271,31 @@ kubectl rollout restart deployment/nextauth-free --namespace=main
 kubectl rollout status deployment/nextauth-free --namespace=main
 ```
 
-For business1:
+For Business1:
 
 ```sh
 kubectl rollout restart deployment/nextauth-business1 --namespace=main
 kubectl rollout status deployment/nextauth-business1 --namespace=main
+```
+
+## Troubleshooting
+
+- **Login failed after authorization:** confirm the OAuth client form was
+  submitted and the callback URI matches exactly.
+- **Client not found:** inspect `OPENISSUER_CLIENT_ID` in the running deployment
+  and confirm that client exists in the same tenant as `OPENISSUER_ISSUER`.
+- **Old client settings remain:** update the exact secret referenced by the
+  values file, then restart the deployment.
+- **Redirect URI mismatch:** include `/nextauth/api/auth/callback/myauth` for the
+  Gateway API deployments.
+- **Old application build remains:** wait for the image workflow to finish, then
+  restart the deployment because the `latest` tag does not change the pod spec.
+
+Inspect the effective settings without printing secret values:
+
+```sh
+kubectl exec deployment/nextauth-free --namespace=main -- \
+  printenv OPENISSUER_ISSUER OPENISSUER_CLIENT_ID NEXTAUTH_URL
 ```
 
 Check logs if login or callback handling fails:

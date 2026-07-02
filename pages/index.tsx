@@ -1,18 +1,33 @@
 import Layout from "../components/layout"
+import Link from "next/link"
 
 export default function IndexPage() {
   return (
     <Layout>
-      <h1>OpenIssuer OAuth Client Test</h1>
-      <p>
-        Use this app to verify an OpenIssuer OAuth client against platform,
-        free, business1, or business2 issuers.
+      <p className="eyebrow">Tenant OIDC client</p>
+      <h1>OpenIssuer sign-in, tokens, and session data.</h1>
+      <p className="pageLead">
+        Authenticate against the configured tenant issuer and inspect the identity
+        returned to this NextAuth application.
       </p>
-      <ul>
-        <li>Register this app's callback URL in the issuer client settings.</li>
-        <li>Set the selected issuer and client ID in the local environment.</li>
-        <li>Sign in and open the Me page to inspect the returned claims.</li>
-      </ul>
+      <div className="featureGrid">
+        <Link href="/me" className="featureItem">
+          <strong>Identity</strong>
+          <span>Issuer, subject, tenant, and claims</span>
+        </Link>
+        <Link href="/client" className="featureItem">
+          <strong>Client session</strong>
+          <span>Session state from the browser</span>
+        </Link>
+        <Link href="/server" className="featureItem">
+          <strong>Server session</strong>
+          <span>Session state rendered on the server</span>
+        </Link>
+        <Link href="/api-example" className="featureItem">
+          <strong>API responses</strong>
+          <span>Session and JSON Web Token endpoints</span>
+        </Link>
+      </div>
     </Layout>
   )
 }

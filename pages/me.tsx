@@ -7,8 +7,9 @@ export default function MePage() {
 
   return (
     <Layout>
-      <h1>Signed-in User</h1>
-      <dl>
+      <p className="eyebrow">Current identity</p>
+      <h1>Signed-in user</h1>
+      <dl className="identityList">
         <dt>Status</dt>
         <dd>{status}</dd>
         <dt>Name</dt>
@@ -23,8 +24,8 @@ export default function MePage() {
         <dd>{String(claims.tenant_id || "")}</dd>
       </dl>
 
-      <h2>Claims</h2>
-      <pre>{JSON.stringify(claims, null, 2)}</pre>
+      <h2>Token claims</h2>
+      <pre className="codePanel">{JSON.stringify(claims, null, 2)}</pre>
     </Layout>
   )
 }

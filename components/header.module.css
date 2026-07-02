@@ -1,92 +1,187 @@
-/* Set min-height to avoid page reflow while session loading */
-.signedInStatus {
-  display: block;
-  min-height: 4rem;
-  width: 100%;
+.header {
+  min-width: 0;
+  border-bottom: 1px solid #d8ded8;
+  background: rgba(252, 253, 250, 0.96);
 }
 
-.loading,
-.loaded {
-  position: relative;
-  top: 0;
-  opacity: 1;
-  overflow: hidden;
-  border-radius: 0 0 0.6rem 0.6rem;
-  padding: 0.6rem 1rem;
-  margin: 0;
-  background-color: rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease-in;
+.headerInner {
+  width: min(1080px, calc(100% - 40px));
+  min-height: 76px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  color: #111817;
+  text-decoration: none;
+}
+
+.brandMark {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: #13211d;
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.brand > span:last-child {
+  display: grid;
+}
+
+.brand strong {
+  font-size: 1rem;
+}
+
+.brand small {
+  color: #66736e;
+  font-size: 0.72rem;
+}
+
+.sessionStatus {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+}
+
+.loaded,
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .loading {
-  top: -2rem;
-  opacity: 0;
+  opacity: 0.45;
 }
 
-.signedInText,
-.notSignedInText {
-  position: absolute;
-  padding-top: 0.8rem;
-  left: 1rem;
-  right: 6.5rem;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+.statusText {
+  color: #66736e;
+  font-size: 0.88rem;
+}
+
+.userIdentity {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.userIdentity > span:last-child {
+  display: grid;
+  min-width: 0;
+}
+
+.userIdentity small {
+  color: #66736e;
+  font-size: 0.7rem;
+}
+
+.userIdentity strong {
+  max-width: 220px;
   overflow: hidden;
-  display: inherit;
-  z-index: 1;
-  line-height: 1.3rem;
-}
-
-.signedInText {
-  padding-top: 0rem;
-  left: 4.6rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.88rem;
 }
 
 .avatar {
-  border-radius: 2rem;
-  float: left;
-  height: 2.8rem;
-  width: 2.8rem;
-  background-color: white;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background-color: #eef3ef;
+  background-position: center;
   background-size: cover;
-  background-repeat: no-repeat;
 }
 
 .button,
 .buttonPrimary {
-  float: right;
-  margin-right: -0.4rem;
-  font-weight: 500;
-  border-radius: 0.3rem;
-  cursor: pointer;
-  font-size: 1rem;
-  line-height: 1.4rem;
-  padding: 0.7rem 0.8rem;
-  position: relative;
-  z-index: 10;
-  background-color: transparent;
-  color: #555;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border: 1px solid #b8c2bd;
+  border-radius: 6px;
+  color: #1b2723;
+  text-decoration: none;
+  font-size: 0.86rem;
+  font-weight: 800;
 }
 
 .buttonPrimary {
-  background-color: #346df1;
-  border-color: #346df1;
+  border-color: #13211d;
+  background: #13211d;
   color: #fff;
-  text-decoration: none;
-  padding: 0.7rem 1.4rem;
 }
 
-.buttonPrimary:hover {
-  box-shadow: inset 0 0 5rem rgba(0, 0, 0, 0.2);
+.navigation {
+  min-width: 0;
+  border-top: 1px solid #edf0ed;
+  overflow-x: auto;
 }
 
 .navItems {
-  margin-bottom: 2rem;
+  width: min(1080px, calc(100% - 40px));
+  min-height: 48px;
+  margin: 0 auto;
   padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
   list-style: none;
 }
 
-.navItem {
-  display: inline-block;
-  margin-right: 1rem;
+.navItem a {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 11px;
+  border-radius: 5px;
+  color: #46514d;
+  text-decoration: none;
+  white-space: nowrap;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.navItem a:hover {
+  background: #edf4ef;
+  color: #143a2a;
+}
+
+@media (max-width: 680px) {
+  .headerInner {
+    width: min(calc(100% - 28px), 1080px);
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 14px 0;
+    gap: 12px;
+  }
+
+  .sessionStatus,
+  .loaded,
+  .loading {
+    width: 100%;
+  }
+
+  .loaded,
+  .loading {
+    justify-content: space-between;
+  }
+
+  .navItems {
+    width: min(calc(100% - 16px), 1080px);
+  }
 }

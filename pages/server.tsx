@@ -28,7 +28,7 @@ export default function ServerSidePage({ session }: { session: Session }) {
         The disadvantage of Server Side Rendering is that this page is slower to
         render.
       </p>
-      <pre>{JSON.stringify(session, null, 2)}</pre>
+      <pre className="codePanel">{JSON.stringify(session, null, 2)}</pre>
     </Layout>
   )
 }
