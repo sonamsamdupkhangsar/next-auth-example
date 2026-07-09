@@ -1,12 +1,24 @@
+import { DefaultSession } from "next-auth"
 import "next-auth/jwt"
 
-// Read more at: https://next-auth.js.org/getting-started/typescript#module-augmentation
+type OpenIssuerClaims = Record<string, unknown>
+
+declare module "next-auth" {
+  interface Session extends DefaultSession {
+    accessToken?: string
+    idToken?: string
+    issuer?: unknown
+    claims?: OpenIssuerClaims
+  }
+}
 
 declare module "next-auth/jwt" {
   interface JWT {
-    /** The user's role. */
-    userRole?: "admin"
-   // adminRole?: "admin"
-   // noRole?: "none"
+    accessToken?: string
+    idToken?: string
+    refreshToken?: string
+    expiresAt?: number
+    issuer?: unknown
+    claims?: OpenIssuerClaims
   }
 }

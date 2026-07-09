@@ -1,0 +1,69 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/sonamsamdupkhangsar/next-auth-example
+  tag: latest
+  pullPolicy: Always
+
+imagePullSecrets:
+  - name: github-regcred
+
+nameOverride: ""
+fullnameOverride: "nextauth-free"
+
+serviceAccount:
+  create: false
+  annotations: {}
+  name:
+
+rbac:
+  create: false
+
+podSecurityContext: {}
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+ingress:
+  enabled: false
+
+httproute:
+  gatewayName: shared-tls-gateway
+  namespace: main
+  hostnames:
+    - free.openissuer.com
+  httpsListenerName: https-free
+  httpListenerName: http-free
+  pathPrefix: /nextauth
+
+resources: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+postgres:
+
+envs:
+  - name: NEXTAUTH_URL
+    value: https://free.openissuer.com/nextauth/api/auth
+  - name: NEXT_PUBLIC_BASE_PATH
+    value: /nextauth
+  - name: OPENISSUER_ISSUER
+    value: https://free.openissuer.com/issuer
+  - name: OPENISSUER_PROVIDER_ID
+    value: myauth
+  - name: OPENISSUER_SCOPES
+    value: openid profile
+
+secretFiles:
+  - file: nextauth-free-secrets
+    keys:
+      - name: NEXTAUTH_SECRET
+        key: NEXTAUTH_SECRET
+      - name: OPENISSUER_CLIENT_ID
+        key: OPENISSUER_CLIENT_ID
+      - name: OPENISSUER_CLIENT_SECRET
+        key: OPENISSUER_CLIENT_SECRET
+        optional: true

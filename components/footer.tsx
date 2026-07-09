@@ -1,28 +1,17 @@
 import Link from "next/link"
 import styles from "./footer.module.css"
-import packageJSON from "../package.json"
 
 export default function Footer() {
   return (
     <footer className={styles.footer}>
-      <hr />
-      <ul className={styles.navItems}>
-        <li className={styles.navItem}>
-          <a href="https://next-auth.js.org">Documentation</a>
-        </li>
-        <li className={styles.navItem}>
-          <a href="https://www.npmjs.com/package/next-auth">NPM</a>
-        </li>
-        <li className={styles.navItem}>
-          <a href="https://github.com/nextauthjs/next-auth-example">GitHub</a>
-        </li>
-        <li className={styles.navItem}>
+      <div className={styles.footerInner}>
+        <span>OpenIssuer NextAuth client</span>
+        <nav aria-label="Supporting links">
+          <a href="https://openissuer.com/docs">Docs</a>
+          <a href="https://github.com/sonamsamdupkhangsar/next-auth-example">Source</a>
           <Link href="/policy">Policy</Link>
-        </li>
-        <li className={styles.navItem}>
-          <em>next-auth@{packageJSON.dependencies["next-auth"]}</em>
-        </li>
-      </ul>
+        </nav>
+      </div>
     </footer>
   )
 }

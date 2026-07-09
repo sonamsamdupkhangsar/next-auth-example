@@ -10,82 +10,81 @@ export default function Header() {
   const loading = status === "loading"
 
   return (
-    <header>
+    <header className={styles.header}>
       <noscript>
         <style>{`.nojs-show { opacity: 1; top: 0; }`}</style>
       </noscript>
-      <div className={styles.signedInStatus}>
-        <p
-          className={`nojs-show ${
-            !session && loading ? styles.loading : styles.loaded
-          }`}
-        >
-          {!session && (
-            <>
-              <span className={styles.notSignedInText}>
-                You are not signed in
+      <div className={styles.headerInner}>
+        <Link href="/" className={styles.brand}>
+          <span className={styles.brandMark}>OI</span>
+          <span>
+            <strong>OpenIssuer</strong>
+            <small>OIDC client</small>
+          </span>
+        </Link>
+        <div className={styles.sessionStatus}>
+          <div className={!session && loading ? styles.loading : styles.loaded}>
+            {!session && !loading && <span className={styles.statusText}>Signed out</span>}
+            {session?.user && (
+              <span className={styles.userIdentity}>
+                {session.user.image && (
+                  <span
+                    style={{ backgroundImage: `url('${session.user.image}')` }}
+                    className={styles.avatar}
+                  />
+                )}
+                <span>
+                  <small>Signed in</small>
+                  <strong>{session.user.name || session.user.email}</strong>
+                </span>
               </span>
+            )}
+            {!session && !loading && (
               <a
-                href={`/api/auth/signin`}
+                href="/api/auth/signin"
                 className={styles.buttonPrimary}
-                onClick={(e) => {
-                  e.preventDefault()
-                  signIn('myauth')
+                onClick={(event) => {
+                  event.preventDefault()
+                  signIn("myauth")
                 }}
               >
                 Sign in
               </a>
-            </>
-          )}
-          {session?.user && (
-            <>
-              {session.user.image && (
-                <span
-                  style={{ backgroundImage: `url('${session.user.image}')` }}
-                  className={styles.avatar}
-                />
-              )}
-              <span className={styles.signedInText}>
-                <small>Signed in as</small>
-                <br />
-                <strong>{session.user.name}</strong>
-              </span>
+            )}
+            {session?.user && (
               <a
-                href={`/api/auth/signout`}
+                href="/api/auth/signout"
                 className={styles.button}
-                onClick={(e) => {
-                  e.preventDefault()
+                onClick={(event) => {
+                  event.preventDefault()
                   signOut()
                 }}
               >
                 Sign out
               </a>
-            </>
-          )}
-        </p>
+            )}
+          </div>
+        </div>
       </div>
-      <nav>
+      <nav className={styles.navigation} aria-label="Client views">
         <ul className={styles.navItems}>
           <li className={styles.navItem}>
             <Link href="/">Home</Link>
           </li>
           <li className={styles.navItem}>
-            <Link href="/client">Client</Link>
+            <Link href="/client">Client session</Link>
           </li>
           <li className={styles.navItem}>
-            <Link href="/server">Server</Link>
+            <Link href="/server">Server session</Link>
           </li>
           <li className={styles.navItem}>
             <Link href="/protected">Protected</Link>
           </li>
           <li className={styles.navItem}>
-            <Link href="/api-example">API</Link>
+            <Link href="/api-example">API responses</Link>
           </li>
           <li className={styles.navItem}>
-            <Link href="/admin">Admin</Link>
-          </li>
-          <li className={styles.navItem}>
-            <Link href="/me">Me</Link>
+            <Link href="/me">Identity</Link>
           </li>
         </ul>
       </nav>

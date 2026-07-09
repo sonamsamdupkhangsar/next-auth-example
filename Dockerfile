@@ -1,17 +1,16 @@
-FROM node:20
+FROM node:24
 
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+ARG NEXT_PUBLIC_BASE_PATH=/nextauth
+ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
 
 WORKDIR /app
 COPY package*.json ./
-RUN pnpm install
+RUN npm ci
 COPY . .
 EXPOSE 3000
 #CMD npm run dev-k8
 
 #For production build do:
-RUN pnpm run build-prod
+RUN npm run build-prod
 #and then will start the prod profile 
-CMD pnpm run start
+CMD ["npm", "run", "start"]

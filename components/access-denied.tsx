@@ -2,7 +2,8 @@ import { signIn } from "next-auth/react"
 
 export default function AccessDenied() {
   return (
-    <>
+    <div className="notice noticeError">
+      <p className="eyebrow">Authentication required</p>
       <h1>Access Denied</h1>
       <p>
         <a
@@ -12,9 +13,9 @@ export default function AccessDenied() {
             signIn()
           }}
         >
-          You must be signed in to view this page
+          Sign in to continue
         </a>
       </p>
-    </>
+    </div>
   )
 }
