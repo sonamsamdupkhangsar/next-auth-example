@@ -75,6 +75,7 @@ URIs:
 ```text
 https://free.openissuer.com/nextauth/api/auth/callback/myauth
 https://business1.openissuer.com/nextauth/api/auth/callback/myauth
+https://demo.openissuer.com/nextauth/api/auth/callback/myauth
 ```
 
 ## Run
@@ -214,6 +215,28 @@ Deploy it with:
 helm upgrade --install nextauth-business1 \
   /Users/sonamsamdupkhangsar/Documents/github/sonam-helm-chart \
   -f values-business1.yaml \
+  --namespace=main
+```
+
+## Demo Tenant
+
+The demo deployment uses:
+
+```text
+Issuer:       https://demo.openissuer.com/issuer
+Application:  https://demo.openissuer.com/nextauth
+Callback:     https://demo.openissuer.com/nextauth/api/auth/callback/myauth
+Secret name:  nextauth-demo-secrets
+Values file:  values-demo.yaml
+Release name: nextauth-demo
+```
+
+Deploy it with:
+
+```sh
+helm upgrade --install nextauth-demo \
+  /Users/sonamsamdupkhangsar/Documents/github/sonam-helm-chart \
+  -f values-demo.yaml \
   --namespace=main
 ```
 
