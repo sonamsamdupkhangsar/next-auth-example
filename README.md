@@ -7,8 +7,18 @@ It is useful for testing:
 
 - authorization code login through OpenIssuer
 - PKCE, state, and nonce handling through NextAuth
-- issuer-specific clients for `platform`, `free`, `business1`, and `business2`
+- issuer-specific clients
 - returned OIDC claims on the `/me` page
+
+The active OpenIssuer Kubernetes deployment for this repo is the demo tenant:
+
+```text
+https://demo.openissuer.com/nextauth
+```
+
+The Free and Business1 values files remain as optional tenant-specific examples.
+They are not needed for the current public demo flow unless those tenant
+integrations are being tested deliberately.
 
 ## Local Setup
 
@@ -29,7 +39,7 @@ Configure `.env.local`:
 ```sh
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=change-me
-OPENISSUER_ISSUER=https://free.openissuer.com/issuer
+OPENISSUER_ISSUER=https://demo.openissuer.com/issuer
 OPENISSUER_CLIENT_ID=your-client-id
 OPENISSUER_CLIENT_SECRET=
 OPENISSUER_PROVIDER_ID=myauth
@@ -43,7 +53,7 @@ routing on the tenant hosts.
 For a base-path deployment, `NEXTAUTH_URL` must include the auth route:
 
 ```sh
-NEXTAUTH_URL=https://free.openissuer.com/nextauth/api/auth
+NEXTAUTH_URL=https://demo.openissuer.com/nextauth/api/auth
 ```
 
 Generate a better `NEXTAUTH_SECRET` with:
@@ -69,13 +79,17 @@ http://localhost:3000/api/auth/callback/{provider-id}
 The issuer and client must belong together. For example, a `free` client should
 be tested with the `free` issuer URL.
 
-For the Kubernetes Gateway API variants in this repo, register these redirect
-URIs:
+For the active demo Kubernetes deployment, register this redirect URI:
+
+```text
+https://demo.openissuer.com/nextauth/api/auth/callback/myauth
+```
+
+Optional tenant examples use the same path under their own hosts:
 
 ```text
 https://free.openissuer.com/nextauth/api/auth/callback/myauth
 https://business1.openissuer.com/nextauth/api/auth/callback/myauth
-https://demo.openissuer.com/nextauth/api/auth/callback/myauth
 ```
 
 ## Run
@@ -127,51 +141,91 @@ Docker image, but it does not apply anything to the cluster.
 Set the kubeconfig for the OpenIssuer cluster:
 
 ```sh
-export KUBECONFIG=/Users/sonamsamdupkhangsar/Documents/github/do-k8-terraform-1/utils/kubeconfig_tutorial-1.yaml
+export KUBECONFIG=/Users/sonamsamdupkhangsar/Documents/github/do-k8-terraform-1/utils/kubeconfig_openissuer.yaml
 ```
 
 Confirm the image has been built by GitHub Actions before restarting a
 deployment that uses the `latest` tag.
 
-## 10-Minute Free Tenant Quickstart
+## Demo Tenant Quickstart
 
 This flow deploys the example at:
 
 ```text
-https://free.openissuer.com/nextauth
+https://demo.openissuer.com/nextauth
 ```
 
 ### 1. Register The OAuth Client
 
-In the Free tenant admin portal, create an OAuth client with:
+In the Demo tenant admin portal, create an OAuth client with:
 
 ```text
-Redirect URI: https://free.openissuer.com/nextauth/api/auth/callback/myauth
+Client ID: nextauth-demo
+Redirect URI: https://demo.openissuer.com/nextauth/api/auth/callback/myauth
 Scopes: openid, profile
 Grant type: authorization_code
 Client authentication: client_secret_basic
 ```
 
-Submit the client form, then retain the generated client ID and secret. The
-client must be registered in the same tenant as the configured issuer.
+Submit the client form, then retain the client ID and secret. The client must be
+registered in the same tenant as the configured issuer.
 
 ### 2. Create The Kubernetes Secret
 
-The secret name must be `nextauth-free-secrets` because that is the name
-referenced by `values-free.yaml`:
+For the OpenIssuer environment, store the values in macOS Keychain and apply the
+Kubernetes secret from `do-k8-terraform-1`:
 
 ```sh
-kubectl create secret generic nextauth-free-secrets \
-  --from-literal=NEXTAUTH_SECRET="$(openssl rand -hex 32)" \
-  --from-literal=OPENISSUER_CLIENT_ID='replace-me' \
-  --from-literal=OPENISSUER_CLIENT_SECRET='replace-me' \
-  --namespace=main \
-  --dry-run=client -o yaml | kubectl apply -f -
+cd /Users/sonamsamdupkhangsar/Documents/github/do-k8-terraform-1
+scripts/store-demo-oauth-client-in-keychain.sh
+make demo-nextauth-secret
 ```
 
 ### 3. Deploy The Example
 
-From this repository:
+The demo release is included in `do-k8-terraform-1/helmfile.yaml`:
+
+```sh
+cd /Users/sonamsamdupkhangsar/Documents/github/do-k8-terraform-1
+KUBECONFIG="$PWD/utils/kubeconfig_openissuer.yaml" \
+  helmfile -f helmfile.yaml sync
+```
+
+If only this app needs a restart after a secret update:
+
+```sh
+KUBECONFIG="$PWD/utils/kubeconfig_openissuer.yaml" \
+  kubectl rollout restart deployment/nextauth-demo --namespace=main
+```
+
+### 4. Verify Sign-In
+
+Open `https://demo.openissuer.com/nextauth`, select **Sign in**, and complete
+authentication. Open the session view after sign-in and verify the issuer,
+tenant, subject, and claims.
+
+Confirm the deployment is healthy with:
+
+```sh
+kubectl rollout status deployment/nextauth-demo --namespace=main
+kubectl logs deployment/nextauth-demo --namespace=main --tail=100
+```
+
+## Optional Free Tenant Example
+
+Free is not part of the current public demo deployment. Use it only when testing
+the Free tenant integration specifically.
+
+```text
+Issuer:       https://free.openissuer.com/issuer
+Application:  https://free.openissuer.com/nextauth
+Callback:     https://free.openissuer.com/nextauth/api/auth/callback/myauth
+Secret name:  nextauth-free-secrets
+Values file:  values-free.yaml
+Release name: nextauth-free
+```
+
+Deploy it manually with:
 
 ```sh
 helm upgrade --install nextauth-free \
@@ -180,25 +234,10 @@ helm upgrade --install nextauth-free \
   --namespace=main
 ```
 
-The command upgrades the existing release when it is already installed. It is
-not necessary to delete the release first.
+## Optional Business1 Tenant Example
 
-### 4. Verify Sign-In
-
-Open `https://free.openissuer.com/nextauth`, select **Sign in**, and complete
-authentication. Open the session view after sign-in and verify the issuer,
-tenant, subject, and claims.
-
-Confirm the deployment is healthy with:
-
-```sh
-kubectl rollout status deployment/nextauth-free --namespace=main
-kubectl logs deployment/nextauth-free --namespace=main --tail=100
-```
-
-## Business1 Tenant
-
-Repeat the quickstart with these substitutions:
+Business1 is not part of the current public demo deployment. Use it only when
+testing the Business1 tenant integration specifically.
 
 ```text
 Issuer:       https://business1.openissuer.com/issuer
@@ -209,34 +248,12 @@ Values file:  values-business1.yaml
 Release name: nextauth-business1
 ```
 
-Deploy it with:
+Deploy it manually with:
 
 ```sh
 helm upgrade --install nextauth-business1 \
   /Users/sonamsamdupkhangsar/Documents/github/sonam-helm-chart \
   -f values-business1.yaml \
-  --namespace=main
-```
-
-## Demo Tenant
-
-The demo deployment uses:
-
-```text
-Issuer:       https://demo.openissuer.com/issuer
-Application:  https://demo.openissuer.com/nextauth
-Callback:     https://demo.openissuer.com/nextauth/api/auth/callback/myauth
-Secret name:  nextauth-demo-secrets
-Values file:  values-demo.yaml
-Release name: nextauth-demo
-```
-
-Deploy it with:
-
-```sh
-helm upgrade --install nextauth-demo \
-  /Users/sonamsamdupkhangsar/Documents/github/sonam-helm-chart \
-  -f values-demo.yaml \
   --namespace=main
 ```
 
@@ -250,9 +267,9 @@ Use Helm dry-run when you want to see what Helm would render/apply without
 changing the cluster:
 
 ```sh
-helm upgrade --install nextauth-free \
+helm upgrade --install nextauth-demo \
   /Users/sonamsamdupkhangsar/Documents/github/sonam-helm-chart \
-  -f values-free.yaml \
+  -f values-demo.yaml \
   --namespace=main \
   --dry-run --debug
 ```
@@ -261,12 +278,13 @@ Create or update the referenced Kubernetes secrets before deploying. The secret
 names are part of the Helm values and must match exactly:
 
 ```text
+values-demo.yaml      -> nextauth-demo-secrets
 values-free.yaml      -> nextauth-free-secrets
 values-business1.yaml -> nextauth-business1-secrets
 ```
 
-Create the Business1 secret with real client values before deploying that
-variant:
+For optional Free or Business1 deployments, create the matching secret with real
+client values before deploying that variant:
 
 ```sh
 kubectl create secret generic nextauth-business1-secrets \
@@ -287,11 +305,11 @@ kubectl get secret --namespace=main | grep nextauth
 After GitHub Actions pushes a new `latest` image, restart the deployment to pull
 the new image.
 
-For free:
+For demo:
 
 ```sh
-kubectl rollout restart deployment/nextauth-free --namespace=main
-kubectl rollout status deployment/nextauth-free --namespace=main
+kubectl rollout restart deployment/nextauth-demo --namespace=main
+kubectl rollout status deployment/nextauth-demo --namespace=main
 ```
 
 For Business1:
@@ -317,13 +335,12 @@ kubectl rollout status deployment/nextauth-business1 --namespace=main
 Inspect the effective settings without printing secret values:
 
 ```sh
-kubectl exec deployment/nextauth-free --namespace=main -- \
+kubectl exec deployment/nextauth-demo --namespace=main -- \
   printenv OPENISSUER_ISSUER OPENISSUER_CLIENT_ID NEXTAUTH_URL
 ```
 
 Check logs if login or callback handling fails:
 
 ```sh
-kubectl logs --namespace=main deploy/nextauth-free --tail=200
-kubectl logs --namespace=main deploy/nextauth-business1 --tail=200
+kubectl logs --namespace=main deploy/nextauth-demo --tail=200
 ```
