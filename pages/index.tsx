@@ -2,11 +2,24 @@ import Layout from "../components/layout"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
 
-export default function IndexPage() {
+type ShowcaseConfig = {
+  appName: string
+  partnerName: string
+  partnerUrl: string
+}
+
+export async function getServerSideProps() {
+  return {
+    props: {
+      appName: process.env.NEXT_PUBLIC_APP_NAME || "OpenIssuer OIDC client",
+      partnerName: process.env.NEXT_PUBLIC_SSO_PARTNER_NAME || "the other connected app",
+      partnerUrl: process.env.NEXT_PUBLIC_SSO_PARTNER_URL || "",
+    },
+  }
+}
+
+export default function IndexPage({ appName, partnerName, partnerUrl }: ShowcaseConfig) {
   const { data: session } = useSession()
-  const appName = process.env.NEXT_PUBLIC_APP_NAME || "OpenIssuer OIDC client"
-  const partnerUrl = process.env.NEXT_PUBLIC_SSO_PARTNER_URL
-  const partnerName = process.env.NEXT_PUBLIC_SSO_PARTNER_NAME || "the other connected app"
 
   return (
     <Layout>
