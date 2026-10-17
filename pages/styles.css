@@ -179,6 +179,20 @@ iframe {
   background: #fffef9;
 }
 
+.ssoNotice {
+  margin-top: 32px;
+  border-left: 4px solid #2d6a4f;
+}
+
+.ssoNotice strong {
+  color: #143a2a;
+  font-size: 1.05rem;
+}
+
+.ssoNotice p {
+  margin: 8px 0 0;
+}
+
 .noticeError {
   border-left: 4px solid #a33b2b;
 }
