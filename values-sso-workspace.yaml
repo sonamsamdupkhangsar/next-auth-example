@@ -55,7 +55,7 @@ envs:
   - name: NEXT_PUBLIC_SSO_PARTNER_NAME
     value: OpenIssuer Reports
   - name: NEXT_PUBLIC_SSO_PARTNER_URL
-    value: https://sso-reports.openissuer.com/nextauth
+    value: https://sso-reports.openissuer.com/nextauth/sso
   - name: OPENISSUER_ISSUER
     value: https://summit.openissuer.com/issuer
   - name: OPENISSUER_PROVIDER_ID
