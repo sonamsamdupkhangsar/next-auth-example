@@ -138,11 +138,8 @@ deployment workflow.
 Deployments are done manually with Helm. GitHub Actions builds and pushes the
 Docker image, but it does not apply anything to the cluster.
 
-Set the kubeconfig for the OpenIssuer cluster:
-
-```sh
-export KUBECONFIG=/Users/sonamsamdupkhangsar/Documents/github/do-k8-terraform-1/utils/kubeconfig_openissuer.yaml
-```
+The commands below use the default kubeconfig from `~/.kube/config`. Ensure
+your current context points to the OpenIssuer cluster before deploying.
 
 Confirm the image has been built by GitHub Actions before restarting a
 deployment that uses the `latest` tag.
@@ -173,29 +170,27 @@ registered in the same tenant as the configured issuer.
 ### 2. Create The Kubernetes Secret
 
 For the OpenIssuer environment, store the values in macOS Keychain and apply the
-Kubernetes secret from `do-k8-terraform-1`:
+Kubernetes secret from the infrastructure repository:
 
 ```sh
-cd /Users/sonamsamdupkhangsar/Documents/github/do-k8-terraform-1
+cd /path/to/do-k8-terraform
 scripts/store-demo-oauth-client-in-keychain.sh
 make demo-nextauth-secret
 ```
 
 ### 3. Deploy The Example
 
-The demo release is included in `do-k8-terraform-1/helmfile.yaml`:
+The demo release is included in the infrastructure repository's `helmfile.yaml`:
 
 ```sh
-cd /Users/sonamsamdupkhangsar/Documents/github/do-k8-terraform-1
-KUBECONFIG="$PWD/utils/kubeconfig_openissuer.yaml" \
-  helmfile -f helmfile.yaml sync
+cd /path/to/do-k8-terraform
+helmfile -f helmfile.yaml sync
 ```
 
 If only this app needs a restart after a secret update:
 
 ```sh
-KUBECONFIG="$PWD/utils/kubeconfig_openissuer.yaml" \
-  kubectl rollout restart deployment/nextauth-demo --namespace=main
+kubectl rollout restart deployment/nextauth-demo --namespace=main
 ```
 
 ### 4. Verify Sign-In
@@ -229,7 +224,7 @@ Deploy it manually with:
 
 ```sh
 helm upgrade --install nextauth-free \
-  /Users/sonamsamdupkhangsar/Documents/github/sonam-helm-chart \
+  /path/to/sonam-helm-chart \
   -f values-free.yaml \
   --namespace=main
 ```
@@ -252,47 +247,46 @@ Deploy it manually with:
 
 ```sh
 helm upgrade --install nextauth-business1 \
-  /Users/sonamsamdupkhangsar/Documents/github/sonam-helm-chart \
+  /path/to/sonam-helm-chart \
   -f values-business1.yaml \
   --namespace=main
 ```
 
 ## Kubernetes Gateway API Details
 
-The same Docker image is deployed with tenant-specific Helm values. Each values
-file supplies the tenant host, issuer, release name, callback base path, and
-Kubernetes secret reference.
+The current OpenIssuer deployment uses only the demo tenant values:
+
+```text
+values-demo.yaml -> nextauth-demo-secrets
+```
+
+`values-free.yaml` and `values-business1.yaml` remain optional tenant-specific
+examples, but they are not part of the public demo deployment.
 
 Use Helm dry-run when you want to see what Helm would render/apply without
 changing the cluster:
 
 ```sh
 helm upgrade --install nextauth-demo \
-  /Users/sonamsamdupkhangsar/Documents/github/sonam-helm-chart \
+  /path/to/sonam-helm-chart \
   -f values-demo.yaml \
   --namespace=main \
   --dry-run --debug
 ```
 
-Create or update the referenced Kubernetes secrets before deploying. The secret
-names are part of the Helm values and must match exactly:
+Create or update the demo Kubernetes secret before deploying. The secret name is
+part of `values-demo.yaml` and must match exactly:
 
 ```text
-values-demo.yaml      -> nextauth-demo-secrets
-values-free.yaml      -> nextauth-free-secrets
-values-business1.yaml -> nextauth-business1-secrets
+nextauth-demo-secrets
 ```
 
-For optional Free or Business1 deployments, create the matching secret with real
-client values before deploying that variant:
+The OpenIssuer infrastructure repo creates or updates this secret from macOS
+Keychain:
 
 ```sh
-kubectl create secret generic nextauth-business1-secrets \
-  --from-literal=NEXTAUTH_SECRET="$(openssl rand -hex 32)" \
-  --from-literal=OPENISSUER_CLIENT_ID='replace-me' \
-  --from-literal=OPENISSUER_CLIENT_SECRET='replace-me' \
-  --namespace=main \
-  --dry-run=client -o yaml | kubectl apply -f -
+cd /path/to/do-k8-terraform
+make demo-nextauth-secret
 ```
 
 If a secret was created with a different name, the deployment will keep using the
@@ -302,21 +296,12 @@ old values from the expected secret. Check the secret names with:
 kubectl get secret --namespace=main | grep nextauth
 ```
 
-After GitHub Actions pushes a new `latest` image, restart the deployment to pull
-the new image.
-
-For demo:
+After GitHub Actions pushes a new `latest` image, restart the demo deployment to
+pull the new image:
 
 ```sh
 kubectl rollout restart deployment/nextauth-demo --namespace=main
 kubectl rollout status deployment/nextauth-demo --namespace=main
-```
-
-For Business1:
-
-```sh
-kubectl rollout restart deployment/nextauth-business1 --namespace=main
-kubectl rollout status deployment/nextauth-business1 --namespace=main
 ```
 
 ## Troubleshooting
