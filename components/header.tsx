@@ -8,6 +8,7 @@ import styles from "./header.module.css"
 export default function Header() {
   const { data: session, status } = useSession()
   const loading = status === "loading"
+  const appName = process.env.NEXT_PUBLIC_APP_NAME || "OIDC client"
 
   return (
     <header className={styles.header}>
@@ -19,7 +20,7 @@ export default function Header() {
           <span className={styles.brandMark}>OI</span>
           <span>
             <strong>OpenIssuer</strong>
-            <small>OIDC client</small>
+            <small>{appName}</small>
           </span>
         </Link>
         <div className={styles.sessionStatus}>

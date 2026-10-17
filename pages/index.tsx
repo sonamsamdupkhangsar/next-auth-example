@@ -1,15 +1,36 @@
 import Layout from "../components/layout"
 import Link from "next/link"
+import { useSession } from "next-auth/react"
 
 export default function IndexPage() {
+  const { data: session } = useSession()
+  const appName = process.env.NEXT_PUBLIC_APP_NAME || "OpenIssuer OIDC client"
+  const partnerUrl = process.env.NEXT_PUBLIC_SSO_PARTNER_URL
+  const partnerName = process.env.NEXT_PUBLIC_SSO_PARTNER_NAME || "the other connected app"
+
   return (
     <Layout>
-      <p className="eyebrow">Tenant OIDC client</p>
-      <h1>OpenIssuer sign-in, tokens, and session data.</h1>
+      <p className="eyebrow">{appName}</p>
+      <h1>One OpenIssuer login. Multiple connected apps.</h1>
       <p className="pageLead">
-        Authenticate against the configured tenant issuer and inspect the identity
-        returned to this NextAuth application.
+        This app is one half of a live Single Sign-On demonstration. Authenticate
+        against the configured tenant issuer, then open {partnerName} and watch it
+        reuse the same OpenIssuer session.
       </p>
+      {session ? (
+        <div className="notice ssoNotice">
+          <strong>SSO session active</strong>
+          <p>
+            You are signed in as {session.user?.email || session.user?.name || "the current user"}.
+            {partnerUrl ? <> Continue to <a href={partnerUrl}>{partnerName}</a> without signing in again.</> : null}
+          </p>
+        </div>
+      ) : (
+        <div className="notice ssoNotice">
+          <strong>See SSO in action</strong>
+          <p>Sign in above, then open the partner app using the same tenant issuer.</p>
+        </div>
+      )}
       <div className="featureGrid">
         <Link href="/me" className="featureItem">
           <strong>Identity</strong>
